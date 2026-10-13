@@ -29,3 +29,7 @@ No database, authentication or public deployment is included. Run locally or in 
 python -m unittest discover -s tests -v
 ```
 Tests cover mass, reciprocal and crosswind behavior, infeasible routes, energy/reserve accounting, battery mass coupling, geometry boundaries, nighttime solar, invalid inputs, and Streamlit editing/saving.
+
+## Quick launch and private hosting
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Windows / macOS launch scripts and private-server container setup.
