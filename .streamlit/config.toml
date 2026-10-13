@@ -1,0 +1,8 @@
+[browser]
+gatherUsageStats = false
+[theme]
+base = "dark"
+primaryColor = "#45B8A8"
+[server]
+headless = true
+maxUploadSize = 5
