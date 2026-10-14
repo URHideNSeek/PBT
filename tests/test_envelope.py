@@ -18,7 +18,7 @@ class EnvelopeUI(unittest.TestCase):
   a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=30)
   self.assertFalse(a.exception)
   self.assertEqual(a.session_state['envelope_result']['kind'],'payload')
-  self.assertIn('Payload mass (lb)',a.session_state['envelope_result']['frame'])
+  self.assertIn('Payload mass (kg)',a.session_state['envelope_result']['frame'])
   self.assertFalse(any('Desired recharge' in w.label for w in a.number_input))
   a.slider(key='mission_hours').set_value(720.).run(timeout=30)
   self.assertFalse(a.exception)
