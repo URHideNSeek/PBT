@@ -65,6 +65,7 @@ class ComponentUI(unittest.TestCase):
   a=AppTest.from_file(str(ROOT/'app.py')).run(timeout=30);self.assertFalse(a.exception)
   self.assertEqual([x.label for x in a.tabs],['Mission & Envelope','Engineering Sizing','BOM Options'])
   before=a.session_state['envelope_result']['settings']['nonbattery_kg']
+  a.slider(key='mission_payload').set_value(.2).run(timeout=30)
   a.checkbox(key='sensor_t2_rf').check().run(timeout=30)
   self.assertFalse(a.exception)
   self.assertGreater(a.session_state['envelope_result']['settings']['nonbattery_kg'],before)
