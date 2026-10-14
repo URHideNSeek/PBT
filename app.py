@@ -5,7 +5,7 @@ from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POIN
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_recharge':1.,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
 PRESET_VERSION='least-mass-temperature-v2'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
@@ -20,10 +20,10 @@ with st.sidebar:
  st.caption('Starting preset: 12 lb · 0.5 mile per leg · 1 hour on target.')
  mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,step=.1,key='mission_mass')
  distance=st.slider('Range per leg (statute miles)',0.,10.,step=.5,key='mission_range')
- hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=None,step=1.,key='mission_hours')
+ hours=st.slider('Perched time (hours)',1.,720.,step=1.,key='mission_hours')
+ st.caption(f'{hours/24:.2f} days perched; maximum 30 days.')
  good=st.slider('Good solar days (%)',0,100,key='mission_solar')
  st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
- deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=None,step=1.,key='mission_recharge')
  checkins=st.slider('Scheduled communications check-ins per day',0,48,key='mission_checkins')
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
  tier2=st.slider('Tier 2 active minutes per day',0,360,key='mission_tier2')
@@ -128,7 +128,8 @@ with sizing_tab:
   events=st.number_input('Anomaly reports per day',min_value=0.,value=2.)
   event_duration=st.number_input('Minutes per anomaly report',min_value=0.,value=1.)
   sleep=st.number_input('Sleep-transition communication allowance per mission (Wh)',min_value=0.,value=1.)
-  hop=st.number_input('Reposition distance (statute miles)',min_value=0.,value=1.)
+  hop=distance
+  st.caption('Relocation hop equals the initial insertion distance. An outward hop reserves a return from the next perch at twice the insertion distance.')
   wind=st.slider('Steady wind (kt)',0.,30.,20.)
   speed=st.slider('True cruise airspeed (kt)',10.,60.,35.)
   whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
@@ -157,44 +158,24 @@ with sizing_tab:
 with mission_tab:
 
  st.divider()
- st.subheader('Mass envelope')
- st.caption('Maximum achievable range per leg versus flight-ready mass. Uses the main solar, communications, Tier 2 and recharge settings. Changes refresh the envelope automatically.')
- env_good,env_check,env_t2,env_deadline=good,checkins,tier2,deadline
- st.caption(f'Remaining mass is allocated to battery after reserving {fixed_nonbattery:.3f} kg for the selected equipment and installation reserves.')
- calculate_envelope=st.button('Calculate mass envelope')
- envelope_inputs=(fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
- if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs:
+ st.subheader('Payload mass versus range')
+ st.caption('At the selected flight-ready mass and perched duration, available mass is traded between battery and payload. Payload includes selected mission sensors plus unpowered extra payload; installed flight/perch hardware and all reserves remain fixed.')
+ calculate_envelope=st.button('Calculate payload envelope')
+ envelope_inputs=(json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),mass,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate)
+ model_inputs=dict(**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,wind=wind,speed=speed,whkg=whkg,derate=derate)
+ if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
+  from envelope import payload_curve
+  points=payload_curve(hours,mass_lb=mass,nonbattery_kg=fixed_nonbattery,**model_inputs)
+  data=[{k:v for k,v in x.items() if k!='result'} if x else {'Range per leg (mi)':i*.25,'Payload mass (lb)':None,'Additional payload (kg)':None,'Battery fraction':None} for i,x in enumerate(points)]
+  frame=pd.DataFrame(data)
   st.session_state['envelope_inputs']=envelope_inputs
-  from envelope import curve
-  lines={}
-  for target_h in dict.fromkeys([1,hours,24,72]):
-   points=curve(target_h,max_range=10.,nonbattery_kg=fixed_nonbattery,**component_inputs,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
-   lines[f'{target_h:g} hours on target']=[x['Max range per leg mi'] for x in points]
-  frame=pd.DataFrame(lines,index=[x['Mass lb'] for x in points]);frame.index.name='Flight-ready mass (lb)'
-  st.session_state['envelope_result']={'frame':frame,'settings':{'selected_hours':hours,'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'capacity_factor':derate,'nonbattery_kg':fixed_nonbattery,'recharge_limit_h':env_deadline},'component_plan':plan,'component_settings':settings,'model_inputs':dict(**component_inputs,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
- if 'envelope_result' in st.session_state:
-  saved=st.session_state['envelope_result']
-  order=list(dict.fromkeys(['1 hours on target',f'{hours:g} hours on target','24 hours on target','72 hours on target']))
-  chart_data=saved['frame'].reset_index().melt(id_vars='Flight-ready mass (lb)',var_name='Time on target',value_name='Range per leg (mi)')
-  st.vega_lite_chart(chart_data,{
-   'mark':{'type':'line'},
-   'encoding':{
-    'x':{'field':'Flight-ready mass (lb)','type':'quantitative'},
-    'y':{'field':'Range per leg (mi)','type':'quantitative','title':'Maximum range per leg (statute miles)'},
-    'color':{'field':'Time on target','type':'nominal','sort':order,'scale':{'domain':order},'legend':{'orient':'bottom','direction':'horizontal','columns':2,'title':None,'labelLimit':250,'symbolLimit':4,'offset':16}},
-    'strokeWidth':{'condition':{'test':f"datum['Time on target'] === '{hours:g} hours on target'",'value':4},'value':2},
-    'strokeDash':{'condition':{'test':f"datum['Time on target'] === '{hours:g} hours on target'",'value':[7,3]},'value':[1,0]},
-    'order':{'field':'Flight-ready mass (lb)','type':'quantitative'}},
-   'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}
-  },width='stretch')
-  st.caption('Envelope updates when mission or engineering inputs change. Each curve is a conditional boundary; lower range down to 0.5 mile is energy-feasible under those assumptions. Missing points are infeasible. Range is capped at the 10-mile search limit.')
-  st.caption('The thick dashed curve follows Time on target, replacing the former fixed 6-hour curve. The 1-, 24- and 72-hour references remain; matching durations share one curve.')
-  harvest=(good*good_wh+(100-good)*bad_wh)/100
-  daily_station=t1*24+t2*tier2/60+radio*(checkins*duration+events*event_duration)/60
-  st.dataframe(pd.DataFrame([{'Time on target (hours)':h,'Gross solar harvest (Wh)':harvest*h/24,'Station sensing/comms (Wh)':daily_station*h/24,'Net station balance (Wh)':(harvest-daily_station)*h/24} for h in dict.fromkeys([1,hours,24,72])]),hide_index=True,width='stretch')
-  st.caption('Solar is battery-delivered harvest prorated by duration. Net balance subtracts ongoing loads; a negative balance drains the battery. Flight and the one-time sleep report are separate. Harvest above battery capacity is discarded in the energy calculation. This average-day model does not model night or sequences of cloudy days.')
-  st.json(saved['settings'],expanded=False)
-  st.download_button('Download envelope CSV',saved['frame'].to_csv(),file_name='mass_envelope.csv')
+  st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'mass_lb':mass,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
+ saved=st.session_state['envelope_result']
+ if not any(x is not None for x in saved['points']):st.warning('No payload/range combination closes this perched duration at the selected takeoff mass while preserving return energy.')
+ st.vega_lite_chart(saved['frame'],{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (mi)','type':'quantitative','title':'Initial hop / return range (statute miles)'},'y':{'field':'Payload mass (lb)','type':'quantitative','title':'Maximum mission payload mass (lb)'},'tooltip':[{'field':'Range per leg (mi)'},{'field':'Payload mass (lb)'},{'field':'Additional payload (kg)'},{'field':'Battery fraction'}]}},width='stretch')
+ st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
+ st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
+
 try:
  r=size(**component_inputs,mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
 except ValueError as e: st.error(str(e)); st.stop()
@@ -205,14 +186,15 @@ with mission_tab:
  b.metric('Required battery · average solar credit',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
  c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
  st.caption(f"Temperature-adjusted battery capacity: {r['battery_capacity_wh']:.0f} Wh; energy at 95% departure SOC: {r['battery_capacity_wh']*.95:.0f} Wh. Temperature affects capacity, not the 95% dispatch threshold.")
- st.subheader('Ready to move?')
- for label,key in [('Recover to operator','recovery_charge_h'),('Reposition to next perch','reposition_charge_h')]:
-  v=r[key]
-  if v is None: st.warning(label+': cannot recharge to readiness under the assumed battery capacity and continuing station schedule.')
-  else:
-   st.write(f'**{label}: {v:.1f} hours recharge** after the selected time on target.')
-   if v>deadline: st.warning(f'Exceeds the {deadline:g}-hour desired recharge time.')
- st.caption('Recharge uses average net solar after continuing sensing/communications loads. Zero means energy-ready, not departure clearance. Negative daily balance can be tolerated for a finite mission but is not indefinite persistence.')
+ st.subheader('Recharge time needed for relocation')
+ wait=r['relocation_charge_h']
+ if wait is None:st.warning('Relocation cannot become energy-ready under the selected battery capacity, solar mix and continuing sensor/communications schedule.')
+ else:st.metric('Recharge time needed for relocation',f'{wait:.1f} hours',help='Calculated after the selected perched duration; return energy remains protected.')
+ st.caption(f'Relocation: {distance:g} miles. Protected return from the new perch: {2*distance:g} miles, plus landing reserve. Recharge uses net solar after ongoing stationary loads. Zero means no additional charging wait is required.')
+ if not r['return_reserve_preserved']:
+  st.error('The requested perched duration would consume protected return energy. The aircraft must recover or reduce activity before reaching that limit.')
+  if r['maximum_protected_perched_hours'] is not None:st.write(f"Maximum perched duration before the return-energy limit: {r['maximum_protected_perched_hours']:.1f} hours under the average-solar model.")
+ st.caption('Solar is averaged across good/bad days; nighttime, weather sequences and actual charging temperature limits still require verification.')
  if not r['insertion_energy_feasible']: st.error('Insertion needs more energy than the assumed battery can provide before solar charging.')
  if not r['station_energy_feasible']: st.error('Battery crosses the analysis minimum during the station mission. Recharge readiness is not claimed.')
  if not r['mission_energy_feasible']: st.error(f"Assumed battery does not close the mission. Recovery energy margin: {r['energy_margin_average_wh']:.0f} Wh.")
@@ -220,11 +202,11 @@ with mission_tab:
  st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'desired_recharge_h':deadline,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
-  frame=pd.DataFrame([{'Trade':x['name'],**x['mission'],'Required battery Wh':x['results']['required_nominal_average_solar_wh'],'Recovery recharge h':x['results']['recovery_charge_h'],'Reposition recharge h':x['results']['reposition_charge_h']} for x in st.session_state.mission_scenarios]).set_index('Trade')
+  frame=pd.DataFrame([{'Trade':x['name'],**x['mission'],'Required battery Wh':x['results']['required_nominal_average_solar_wh'],'Recharge time needed for relocation h':x['results'].get('relocation_charge_h')} for x in st.session_state.mission_scenarios]).set_index('Trade')
   st.dataframe(frame.T,width='stretch')
   st.download_button('Download mission comparison CSV',frame.to_csv(),file_name='mission_trades.csv')
  st.download_button('Download current mission and engineering assumptions',json.dumps(record,indent=2),file_name='mission_trade.json')
@@ -248,15 +230,13 @@ with sizing_tab:
   st.caption('Saved mission parameters are frozen; CT and nominal-voltage assumptions below apply to this sizing view.')
  if selected=='Envelope point':
   envelope=st.session_state['envelope_result']
-  series=st.selectbox('Envelope time on target',list(envelope['frame'].columns))
-  candidates=[float(m) for m,v in envelope['frame'][series].items() if pd.notna(v)]
-  if not candidates: st.warning('No feasible sizing points on this curve.'); st.stop()
-  point_mass=st.selectbox('Envelope mass (lb)',candidates)
-  point_range=float(envelope['frame'].loc[point_mass,series])
-  battery_fraction=(point_mass*.45359237-envelope['settings']['nonbattery_kg'])/(point_mass*.45359237)
-  target=size(mass_lb=point_mass,range_mi=point_range,days=float(series.split()[0])/24,battery_fraction=battery_fraction,**envelope['model_inputs'])
+  feasible=[x for x in envelope['points'] if x is not None]
+  if not feasible:st.warning('No feasible payload envelope point for this perched duration.');st.stop()
+  point_range=st.selectbox('Envelope range per leg (mi)',[x['Range per leg (mi)'] for x in feasible])
+  point=next(x for x in feasible if x['Range per leg (mi)']==point_range)
+  target=point['result'].copy();target['additional_payload_kg']=point['Additional payload (kg)']
   target_plan=envelope['component_plan'];target_settings=envelope['component_settings'] | {'link_range_km':point_range*1.609344}
-  st.caption(f'Sizing at the last calculated envelope boundary: {point_mass:g} lb, {point_range:.2f} miles per leg, {series}. Uses the frozen envelope assumptions.')
+  st.caption(f"Payload boundary: {point['Payload mass (lb)']:.2f} lb total mission payload, {point_range:g} miles per leg, {envelope['settings']['selected_hours']:g} hours perched. Battery allocation is solved from remaining mass.")
  try: calculated=derive(target,thrust_coefficient=ct,nominal_voltage=nominal_v)
  except ValueError as e: st.error(str(e)); st.stop()
  rows=[]
