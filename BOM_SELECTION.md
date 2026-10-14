@@ -70,3 +70,22 @@ All mission controls, chart axes, engineering tables and downloadable trade/BOM 
 
 ## Payload drives aircraft sizing
 The initial mass slider selects total mission payload from 0 to 6 lb (0 to 2.72155422 kg), including the selected sensors. Aircraft mass and battery mass are driven outputs, not slider inputs. A battery-mass scan with local refinement finds the lightest closing allocation within the configured aircraft, thrust, peak/continuous power and mission-energy limits. The range graph holds payload fixed and recalculates total aircraft mass at each range. Payload below selected sensor mass is infeasible; extra unpowered payload is a separate BOM row. Default payload is 0.060 kg, matching the initial installed mission sensors. No battery-fraction driving slider remains.
+
+## Flight and chronological perched-state model (October 14, 2026)
+
+Flight propulsion now lives in flight.py. Induced, blade-profile and parasite terms vary with true airspeed, density, mass and rotor area. A fixed reference-density calibration anchors the propulsion model to the existing reference cruise power; it does not recalibrate to the current density. Active flight electronics are additive and excluded from the perched baseline. Profile fraction, reference rotor tip speed and density are editable assumptions. Thrust/RPM remains a static coefficient estimate; no matched motor/ESC/prop dataset or airframe flight-test validation is claimed.
+
+perched.py tracks net DC-bus energy in five-minute intervals, with a 06:00–18:00 daylight profile and zero night harvest. The good/bad-day selector sets average daytime yield; the simulation does not generate actual sequences of cloudy days. Daily Tier 1, Tier 2 and communications energy retain their separate accounting and are distributed over each day. Exact burst timing remains unmodeled. Solar supplies concurrent loads before surplus is charged; net charging observes power and efficiency limits. Capacity clipping rejects excess energy. Pack-temperature limits disable charging outside the assumed battery charging temperature range; cell thermal transients and charging taper remain unmodeled.
+
+mission.py composes insertion, perched consumption/solar, retrieval, and a protected contingency reserve. The reserve is a constraint, not an energy-consuming activity. Capacity sizing accounts for arrival readiness, overnight drawdown and saturation, not just average daily balance. Recharge/relocation readiness searches forward through the same daylight profile for up to 30 days and rejects crossing the existing return-energy boundary. Results beyond that search horizon are not declared impossible. The mission view exposes state energy accounting and the perched battery/return-reserve history.
+
+The payload-driven minimum-battery scan continues to check continuous/peak power and thrust as well as mission energy. Shorter range may leave battery mass unchanged when peak-power capability governs. The search grid/local refinement is preliminary inverse sizing, not a globally certified optimizer.
+
+Primary sources:
+- Gao et al., Energy Model for UAV Communications: Experimental Validation and Model Generalization (2020), https://arxiv.org/html/2005.01305v1
+- Zeng, Xu and Zhang, Energy Minimization for Wireless Communication with Rotary-Wing UAV, https://arxiv.org/abs/1804.02238
+- UIUC folding propeller measurements, https://m-selig.ae.illinois.edu/props/volume-3/propDB-volume-3.html
+- PX4 battery estimation, https://docs.px4.io/main/en/config/battery
+- Solar and battery time-series modeling, https://samrepo.nlr.gov/help/battery_storage.html
+
+This section supersedes earlier statements describing average continuous harvest or charging time calculated solely as deficit / average daily surplus.
