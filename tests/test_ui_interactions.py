@@ -8,7 +8,7 @@ class InteractionTests(unittest.TestCase):
   for kind in ['slider','number_input']:
    for w in getattr(a,kind):
     definitions.append((kind,w.label,w.value,[w.min,w.value,w.max if w.max is not None else max(1000.,w.value*10)]))
-  self.assertEqual(len(definitions),22)
+  self.assertEqual(len(definitions),26)
   def set_value(kind,label,value):
    next(w for w in getattr(a,kind) if w.label==label).set_value(value)
   def run():
@@ -19,7 +19,8 @@ class InteractionTests(unittest.TestCase):
     set_value(kind,label,v);run()
    set_value(kind,label,default)
   # Exercise all pairs/triples of the seven customer controls at endpoint mixtures.
-  core=definitions[:5]+definitions[9:11]
+  labels={'Flight-ready mass, including payload (lb)','Range per leg (statute miles)','Time on target (hours)','Good solar days (%)','Desired recharge time before next departure (hours)','Scheduled communications check-ins per day','Tier 2 active minutes per day'}
+  core=[d for d in definitions if d[1] in labels]
   for n in [2,3]:
    for subset in itertools.combinations(core,n):
     for i,(kind,label,default,values) in enumerate(subset):
