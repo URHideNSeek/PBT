@@ -43,25 +43,34 @@ with mission_tab:
 
  st.divider()
  st.subheader('Mass envelope')
- st.caption('Maximum achievable range per leg versus flight-ready mass, for several times on target. All mission activities remain nonzero.')
- ec1,ec2,ec3=st.columns(3)
- env_good=ec1.slider('Envelope good-solar days (%)',1,100,100,key='env_good')
- env_check=ec2.number_input('Envelope check-ins per day',min_value=1,max_value=48,value=1,key='env_check')
- env_t2=ec3.number_input('Envelope Tier 2 minutes per day',min_value=1,max_value=360,value=1,key='env_t2')
- env_deadline=st.number_input('Envelope recharge deadline (hours)',min_value=1.,max_value=720.,value=1.,step=1.,key='env_deadline')
- st.caption('This envelope uses the current Advanced power, wind and battery assumptions. It allocates remaining mass to battery after reserving 4.35 kg for all nonbattery equipment. Lower activity defaults show an optimistic boundary, not a guaranteed operating envelope.')
- if st.button('Calculate mass envelope'):
+ st.caption('Maximum achievable range per leg versus flight-ready mass. Uses the main solar, communications, Tier 2 and recharge settings. Changes refresh the envelope automatically.')
+ env_good,env_check,env_t2,env_deadline=good,checkins,tier2,deadline
+ st.caption('Remaining mass is allocated to battery after reserving 4.35 kg for nonbattery equipment. Curves are conditional model estimates.')
+ calculate_envelope=st.button('Calculate mass envelope')
+ envelope_inputs=(good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
+ if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs:
+  st.session_state['envelope_inputs']=envelope_inputs
   from envelope import curve
   lines={}
   for target_h in [1,6,24,72]:
-   points=curve(target_h,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
+   points=curve(target_h,max_range=10.,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
    lines[f'{target_h} hours on target']=[x['Max range per leg mi'] for x in points]
   frame=pd.DataFrame(lines,index=[x['Mass lb'] for x in points]);frame.index.name='Flight-ready mass (lb)'
   st.session_state['envelope_result']={'frame':frame,'settings':{'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline},'model_inputs':dict(good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
  if 'envelope_result' in st.session_state:
   saved=st.session_state['envelope_result']
-  st.line_chart(saved['frame'],x_label='Flight-ready mass (lb)',y_label='Maximum range per leg (statute miles)')
-  st.caption('Showing the last calculated envelope. Recalculate after changing any input. Each curve is a conditional boundary; lower range down to 0.5 mile is energy-feasible under those assumptions. Missing points are infeasible. Range is capped at the 15-mile search limit.')
+  order=['1 hours on target','6 hours on target','24 hours on target','72 hours on target']
+  chart_data=saved['frame'].reset_index().melt(id_vars='Flight-ready mass (lb)',var_name='Time on target',value_name='Range per leg (mi)')
+  st.vega_lite_chart(chart_data,{
+   'mark':{'type':'line'},
+   'encoding':{
+    'x':{'field':'Flight-ready mass (lb)','type':'quantitative'},
+    'y':{'field':'Range per leg (mi)','type':'quantitative','title':'Maximum range per leg (statute miles)'},
+    'color':{'field':'Time on target','type':'nominal','sort':order,'scale':{'domain':order},'legend':{'orient':'bottom','direction':'horizontal','columns':2,'title':None,'labelLimit':250,'symbolLimit':4,'offset':16}},
+    'order':{'field':'Flight-ready mass (lb)','type':'quantitative'}},
+   'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}
+  },width='stretch')
+  st.caption('Envelope updates when mission or engineering inputs change. Each curve is a conditional boundary; lower range down to 0.5 mile is energy-feasible under those assumptions. Missing points are infeasible. Range is capped at the 10-mile search limit.')
   st.json(saved['settings'],expanded=False)
   st.download_button('Download envelope CSV',saved['frame'].to_csv(),file_name='mass_envelope.csv')
 try:
@@ -132,7 +141,7 @@ with sizing_tab:
   rows.append({'Sizing characteristic':label.replace('_',' ').capitalize(),'Value':f'{value:.3f}','Units':units.get(suffix,''),'Basis':basis})
  frame=pd.DataFrame(rows)
  st.dataframe(frame,hide_index=True,width='stretch')
- st.warning('Direct drive is assumed (motor RPM equals propeller RPM). RPM uses T = CT × air density × (RPM/60)² × diameter⁴. CT is an assumed static thrust coefficient. This is not measured motor performance or a blade/hub rating, and it does not predict cruise RPM. Confirm with matched motor/ESC/prop curves.')
+ st.warning('RPM uses T = CT × air density × (RPM/60)² × diameter⁴. CT is an assumed static thrust coefficient. This is not measured motor performance or a blade/hub rating, and it does not predict cruise RPM. Confirm with matched motor/ESC/prop curves.')
  st.caption('Pack Ah uses nominal voltage; current uses minimum loaded voltage. Required pack mass is compared with the allocated mass at the selected aircraft weight; adding battery changes aircraft mass and requires a new trade. Peak assembly W is electrical input, not motor shaft power.')
  st.download_button('Download engineering sizing CSV',frame.to_csv(index=False),file_name='engineering_sizing.csv')
  st.download_button('Download engineering sizing JSON',json.dumps({'mission':target,'sizing':calculated,'status':'Derived estimates, not approved requirements'},indent=2),file_name='engineering_sizing.json')
