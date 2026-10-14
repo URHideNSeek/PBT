@@ -32,51 +32,45 @@ with st.sidebar:
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
 mission_tab,sizing_tab,bom_tab=st.tabs(['Mission & Envelope','Engineering Sizing','BOM Options'])
-from components import SENSORS, sensor_plan, bom, match, REQUIRED_FLIGHT_PERCH_SENSORS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
+from components import SENSORS, sensor_plan, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
 from pathlib import Path
 with sizing_tab:
- st.subheader('Required flight and perching sensors')
- st.caption('Fixed hardware for the selected navigation/perching architecture. Flight and Emplace activation is independent of Tier 1/Tier 2 stationary sensing minutes. Integrated sensors are counted in their host component, not added again.')
- with st.container(border=True):
-  sensor_col,required_col=st.columns([5,1])
-  sensor_col.markdown('**Sensor / installation**');required_col.markdown('**Required**')
-  for required_index,(required_name,required_host) in enumerate(REQUIRED_FLIGHT_PERCH_SENSORS):
-   sensor_col,required_col=st.columns([5,1],vertical_alignment='center')
-   sensor_col.write(required_name+' · '+required_host)
-   required_col.checkbox(required_name+' required',value=True,disabled=True,key='required_sensor_'+str(required_index),label_visibility='collapsed')
- st.subheader('Optional mission sensor configuration')
- st.caption('These are additional mission devices. Deselecting them does not remove the required flight/perch sensors above.')
- st.caption('Tier 1 follows the selected duty cycle. Tier 2 follows Mission & Envelope active minutes/day. Each selected device is allocated once.')
+ st.subheader('Sensor configuration')
+ st.caption('Flight / perching is the locked installed-hardware baseline. Tier 1 and Tier 2 select stationary sensing activity using that same hardware. An unchecked tier means idle/not collecting in that tier; required sensors remain available for flight, perching and protection functions.')
  tier1_keys=[];tier2_keys=[]
  with st.container(border=True):
-  name_col,tier1_col,tier2_col=st.columns([4,1,1],gap='small')
-  name_col.markdown('**Sensor**');tier1_col.markdown('**Tier 1**');tier2_col.markdown('**Tier 2**')
+  cols=st.columns([4,1.5,1,1],gap='small')
+  for col,title in zip(cols,['Sensor','Flight / perching','Tier 1','Tier 2']):col.markdown('**'+title+'**')
   for sensor_key,sensor_details in SENSORS.items():
-   name_col,tier1_col,tier2_col=st.columns([4,1,1],gap='small',vertical_alignment='center')
+   name_col,flight_col,tier1_col,tier2_col=st.columns([4,1.5,1,1],gap='small',vertical_alignment='center')
    name_col.write(sensor_details[0])
+   flight_col.checkbox(sensor_details[0]+' · Flight / perching',value=sensor_key in REQUIRED_SENSOR_HOSTS,disabled=True,key='sensor_flight_'+sensor_key,label_visibility='collapsed')
    if tier1_col.checkbox(sensor_details[0]+' · Tier 1',value=sensor_key in ['environment','pressure','light'],key='sensor_t1_'+sensor_key,label_visibility='collapsed'):tier1_keys.append(sensor_key)
    if tier2_col.checkbox(sensor_details[0]+' · Tier 2',value=sensor_key in ['visible','thermal'],key='sensor_t2_'+sensor_key,label_visibility='collapsed'):tier2_keys.append(sensor_key)
  sensor_duty=st.slider('Tier 1 duty cycle (%)',0,100,100)/100
  profiles={}
  with st.expander('Sensor allocations and minimum selection parameters'):
   st.caption('These are editable allocations. Logged rate means stored/encoded output, not raw bus throughput. Temperature applies to every sourced row.')
-  for key in dict.fromkeys([*tier1_keys,*tier2_keys]):
+  for key in dict.fromkeys([*REQUIRED_SENSOR_HOSTS,*tier1_keys,*tier2_keys]):
    label,sg,sw,ss,srate,interface=SENSORS[key]
    st.markdown('**'+label+'**')
    a,b,c=st.columns(3)
-   q=a.number_input('Quantity',1,20,1,key=key+'_q')
-   allocated=b.number_input('Mass each (g)',min_value=0.1,value=sg,key=key+'_mass')
+   required=key in REQUIRED_SENSOR_HOSTS
+   q=a.number_input('Quantity',1,20,1,key=key+'_q',disabled=required)
+   if required:
+    allocated=0.;b.caption('Mass included in '+REQUIRED_SENSOR_HOSTS[key]+' host row; one installed device.')
+   else:allocated=b.number_input('Mass each (g)',min_value=0.1,value=sg,key=key+'_mass')
    active=c.number_input('Active power allowance (W)',min_value=0.,value=sw,key=key+'_active')
    a,b,c=st.columns(3)
    idle=a.number_input('Sleep power (W)',min_value=0.,value=ss,key=key+'_sleep')
    logged=b.number_input('Logged data rate (Mbps)',min_value=0.,value=srate,format='%.4f',key=key+'_rate')
    rail=c.number_input('Supply rail (V)',min_value=1.,value=5.,key=key+'_rail')
-   bus=st.selectbox('Sensor interface',['USB','I2C','SPI','UART','CAN','Ethernet'],index=['USB','I2C','SPI','UART','CAN','Ethernet'].index(interface),key=key+'_interface')
+   bus=st.selectbox('Sensor interface',['USB','I2C','SPI','UART','CAN','Ethernet','GPIO'],index=['USB','I2C','SPI','UART','CAN','Ethernet','GPIO'].index(interface),key=key+'_interface')
    perf={};gaps=[]
    if key in ['visible','thermal']:
     a,b,c=st.columns(3)
-    perf={'pixels_x':a.number_input('Minimum image width (pixels)',1,10000,1920 if key=='visible' else 640,key=key+'_x'),
-          'pixels_y':b.number_input('Minimum image height (pixels)',1,10000,1080 if key=='visible' else 480,key=key+'_y'),
+    perf={'pixels_x':a.number_input('Minimum image width (pixels)',1,10000,1280 if key=='visible' else 640,key=key+'_x'),
+          'pixels_y':b.number_input('Minimum image height (pixels)',1,10000,720 if key=='visible' else 480,key=key+'_y'),
           'fps':c.number_input('Minimum frame rate (Hz)',1,240,30,key=key+'_fps')}
     gaps=['Optics / scene coverage / image quality need definition'] if not st.checkbox('Generic imaging is sufficient; no additional optics/scene requirement',value=True,key=key+'_generic') else []
    elif key=='gnss':perf={'accuracy_m':st.number_input('Maximum position error (m)',min_value=.01,value=2.5,key=key+'_accuracy'),'update_hz':5.}
@@ -151,7 +145,7 @@ with sizing_tab:
 settings=dict(temp_min_c=temp_low,temp_max_c=temp_high,structure_g=structure_g,wires_g=wires_g,fasteners_g=fasteners_g,sealants_g=sealants_g,growth_g=growth_g,regulator_g=regulator_g,navigation_g=navigation_g,servo_qty=servo_qty,servo_g=servo_g,servo_torque_kgcm=servo_torque,servo_v=servo_v,bus_max_v=bus_max,current_margin=current_margin,compute_w=compute_w,autopilot_w=autopilot_w,ram_gb=ram_gb,retention_days=retention_days,gnss_accuracy_m=gnss_accuracy,radio_w=radio,radio_supply_v=radio_supply,link_range_km=distance*1.609344,link_mbps=link_mbps,frequency_mhz=frequency)
 try:
  if bus_max<nominal_v:raise ValueError('Maximum bus voltage must not be below nominal battery voltage.')
- plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,housekeeping_extra+compute_w+autopilot_w+1.5+FIXED_PERCH_SENSOR_SLEEP_W)
+ plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,housekeeping_extra+compute_w+autopilot_w+1.5)
 except ValueError as e:st.error(str(e));st.stop()
 t1,t2=plan['tier1_w'],plan['tier2_w']
 installation_kg=(structure_g+wires_g+fasteners_g+sealants_g+growth_g+regulator_g+navigation_g+servo_qty*servo_g+FIXED_PERCH_SENSOR_G)/1000
