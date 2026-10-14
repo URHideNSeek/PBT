@@ -2,8 +2,8 @@ import json
 import pandas as pd
 import streamlit as st
 from mission import size
-st.set_page_config(page_title='Pigeon Bot Mission Trades',page_icon='🕊️',layout='wide')
-st.title('Pigeon Bot · Mission Trades')
+st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
+st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
 with st.sidebar:
  st.header('Platform & mission')
