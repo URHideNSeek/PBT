@@ -3,7 +3,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN useradd --create-home appuser
-COPY --chown=appuser:appuser app.py model.py mission.py envelope.py advanced_app.py ./
+COPY --chown=appuser:appuser app.py model.py mission.py envelope.py sizing.py advanced_app.py ./
 COPY --chown=appuser:appuser .streamlit ./.streamlit
 USER appuser
 EXPOSE 8501
