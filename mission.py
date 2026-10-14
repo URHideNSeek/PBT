@@ -5,13 +5,11 @@ from model import DEFAULTS,evaluate
 def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day=40.,battery_fraction=.5,good_wh=90.,bad_wh=15.,checkin_min=1.,events_day=2.,event_min=1.,wake_wh=1.,tier1_w=5.,tier2_w=40.,comms_w=60.,reposition_mi=1.,**engineering):
  vals=[mass_lb,range_mi,days,good_pct,battery_fraction,good_wh,bad_wh,checkin_min,events_day,event_min,wake_wh,tier1_w,tier2_w,comms_w,reposition_mi,tier2_min_day]
  if any(isinstance(x,bool) or not isinstance(x,(int,float)) or not isfinite(x) for x in vals) or isinstance(checkins,bool) or not isinstance(checkins,(int,float)) or not isfinite(checkins) or mass_lb<=0 or range_mi<0 or days<=0 or not 0<=good_pct<=100 or not 0<battery_fraction<1 or min(vals[5:])<0 or not 0<=tier2_min_day<=1440 or checkins<0 or checkins!=int(checkins): raise ValueError('Invalid mission input')
- minimum_other_kg=engineering.pop("minimum_other_kg",0.)
- if not isfinite(minimum_other_kg) or minimum_other_kg<0: raise ValueError("Invalid structure and installation reserve")
  m=mass_lb*.45359237;p=DEFAULTS|engineering
  p.update(battery_kg=m*battery_fraction,other_kg=0.,growth_kg=0.,out_mi=range_mi,back_mi=range_mi,hours=0.,t2_min=0.,radio_min=0.)
  # Fixed nonbattery mass is allocated by the remaining mass; this does not prove packaging.
  remainder=m-sum(p[k] for k in ['battery_kg','propulsion_kg','sensor_kg','compute_kg','comms_kg','solar_kg'])
- if remainder<minimum_other_kg: raise ValueError('Mass target cannot accommodate battery, selected sensors and installation reserves. Reduce allocations or change the mission mass/battery fraction.')
+ if remainder<0: raise ValueError('Mass target cannot accommodate battery fraction and fixed subsystem allocations. Reduce allocations in Advanced.')
  p['other_kg']=remainder
  r=evaluate(p)
  if r['mission_wh'] is None: raise ValueError('Wind and airspeed make the selected route infeasible')

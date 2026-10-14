@@ -21,9 +21,9 @@ class SizingTests(unittest.TestCase):
   from streamlit.testing.v1 import AppTest
   a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=20)
   self.assertEqual(len(a.exception),0)
-  self.assertEqual([x.label for x in a.tabs],['Mission & Envelope','Engineering Sizing','BOM Options'])
+  self.assertEqual([x.label for x in a.tabs],['Mission & Envelope','Engineering Sizing'])
   next(b for b in a.button if b.label=='Save mission to comparison').click().run()
-  next(w for w in a.selectbox if w.label=='Sizing for').set_value('Saved: Mission concept').run()
+  a.selectbox[0].set_value('Saved: Mission concept').run()
   self.assertEqual(len(a.exception),0)
 class EnvelopeSizingUI(unittest.TestCase):
  def test_select_boundary_case(self):
