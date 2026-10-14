@@ -32,7 +32,7 @@ with st.sidebar:
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
 mission_tab,sizing_tab,bom_tab=st.tabs(['Mission & Envelope','Engineering Sizing','BOM Options'])
-from components import SENSORS, sensor_plan, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
+from components import SENSORS, sensor_plan, operating_power, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
 from pathlib import Path
 with sizing_tab:
  st.subheader('Sensor configuration')
@@ -121,7 +121,12 @@ with sizing_tab:
   fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,key='battery_fraction_pct')/100
   good_wh=st.number_input('Battery-delivered harvest on good day (Wh)',min_value=0.,value=90.)
   bad_wh=st.number_input('Battery-delivered harvest on bad day (Wh)',min_value=0.,value=15.)
-  housekeeping_extra=st.number_input('Additional housekeeping power (W)',min_value=0.,value=1.)
+  housekeeping_extra=st.number_input('Low-power Tier 1 monitor / housekeeping (W)',min_value=0.,value=1.)
+  compute_sleep_w=st.number_input('Payload computer sleep power (W)',min_value=0.,value=.05)
+  flight_sleep_w=st.number_input('Flight controller sleep power (W)',min_value=0.,value=.02)
+  gnss_sleep_w=st.number_input('GNSS standby power (W)',min_value=0.,value=.01)
+  radio_sleep_w=st.number_input('Communications standby power (W)',min_value=0.,value=.02)
+  st.caption('Flight/perching hardware stays installed; while secured, flight compute and GNSS sleep. Low-power sensor access and wake control are design requirements, not measured capabilities. Tier 1 imaging/RF/radar selections keep the payload computer awake at the selected duty cycle.')
   st.caption('Tier power is derived from selected sensors and computer/controller/navigation allowances.')
   radio=st.number_input('Active communications power (W)',min_value=0.,value=60.)
   duration=st.number_input('Minutes per scheduled check-in',min_value=0.,value=1.)
@@ -146,14 +151,18 @@ with sizing_tab:
 settings=dict(temp_min_c=temp_low,temp_max_c=temp_high,structure_g=structure_g,wires_g=wires_g,fasteners_g=fasteners_g,sealants_g=sealants_g,growth_g=growth_g,regulator_g=regulator_g,navigation_g=navigation_g,servo_qty=servo_qty,servo_g=servo_g,servo_torque_kgcm=servo_torque,servo_v=servo_v,bus_max_v=bus_max,current_margin=current_margin,compute_w=compute_w,autopilot_w=autopilot_w,ram_gb=ram_gb,retention_days=retention_days,gnss_accuracy_m=gnss_accuracy,radio_w=radio,radio_supply_v=radio_supply,link_range_km=distance*1.609344,link_mbps=link_mbps,frequency_mhz=frequency)
 try:
  if bus_max<nominal_v:raise ValueError('Maximum bus voltage must not be below nominal battery voltage.')
- plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,housekeeping_extra+compute_w+autopilot_w+1.5)
+ plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,0.)
+ power_states=operating_power(plan,housekeeping_w=housekeeping_extra,compute_active_w=compute_w,compute_sleep_w=compute_sleep_w,flight_sleep_w=flight_sleep_w,gnss_sleep_w=gnss_sleep_w,radio_active_w=radio,radio_sleep_w=radio_sleep_w)
+ plan['power_states']=power_states
 except ValueError as e:st.error(str(e));st.stop()
-t1,t2=plan['tier1_w'],plan['tier2_w']
+t1,t2=power_states['tier1_w'],power_states['tier2_w']
+comms_increment=power_states['comms_increment_w']
 installation_kg=(structure_g+wires_g+fasteners_g+sealants_g+growth_g+regulator_g+navigation_g+servo_qty*servo_g+FIXED_PERCH_SENSOR_G)/1000
 fixed_nonbattery=installation_kg+1.05+.22+.87+.25+plan['sensor_kg']
 component_inputs=dict(sensor_kg=plan['sensor_kg'],minimum_other_kg=installation_kg)
 with sizing_tab:
  st.caption(f"Derived stationary loads: Tier 1 + housekeeping {t1:.2f} W; Tier 2 active increment {t2:.2f} W. Selected sensors: {plan['sensor_kg']*1000:.1f} g. Logged data: {plan['daily_gb']:.3f} GB/day.")
+ st.dataframe(pd.DataFrame([{'Power state':'Tier 1 + standby','Daily energy (Wh)':t1*24},{'Power state':'Tier 2 sensors + compute wake','Daily energy (Wh)':t2*tier2/60},{'Power state':'Scheduled communications + compute wake','Daily energy (Wh)':comms_increment*checkins*duration/60},{'Power state':'Anomaly reports + compute wake','Daily energy (Wh)':comms_increment*events*event_duration/60}]),hide_index=True,width='stretch')
 
 with mission_tab:
 
@@ -162,22 +171,25 @@ with mission_tab:
  st.caption('At the selected flight-ready mass and perched duration, available mass is traded between battery and payload. Payload includes selected mission sensors plus unpowered extra payload; installed flight/perch hardware and all reserves remain fixed.')
  calculate_envelope=st.button('Calculate payload envelope')
  envelope_inputs=(json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),mass,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate)
- model_inputs=dict(**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,wind=wind,speed=speed,whkg=whkg,derate=derate)
+ model_inputs=dict(**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
   from envelope import payload_curve
   points=payload_curve(hours,mass_lb=mass,nonbattery_kg=fixed_nonbattery,**model_inputs)
   data=[{k:v for k,v in x.items() if k!='result'} if x else {'Range per leg (mi)':i*.25,'Payload mass (lb)':None,'Additional payload (kg)':None,'Battery fraction':None} for i,x in enumerate(points)]
   frame=pd.DataFrame(data)
+  frame['Total aircraft mass (lb)']=[mass if x is not None else None for x in points]
   st.session_state['envelope_inputs']=envelope_inputs
   st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'mass_lb':mass,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
  saved=st.session_state['envelope_result']
  if not any(x is not None for x in saved['points']):st.warning('No payload/range combination closes this perched duration at the selected takeoff mass while preserving return energy.')
- st.vega_lite_chart(saved['frame'],{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (mi)','type':'quantitative','title':'Initial hop / return range (statute miles)'},'y':{'field':'Payload mass (lb)','type':'quantitative','title':'Maximum mission payload mass (lb)'},'tooltip':[{'field':'Range per leg (mi)'},{'field':'Payload mass (lb)'},{'field':'Additional payload (kg)'},{'field':'Battery fraction'}]}},width='stretch')
+ chart_data=saved['frame'].melt(id_vars='Range per leg (mi)',value_vars=['Payload mass (lb)','Total aircraft mass (lb)'],var_name='Mass type',value_name='Mass (lb)')
+ st.vega_lite_chart(chart_data,{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (mi)','type':'quantitative','title':'Initial hop / return range (statute miles)'},'y':{'field':'Mass (lb)','type':'quantitative','scale':{'zero':True}},'color':{'field':'Mass type','type':'nominal','sort':['Payload mass (lb)','Total aircraft mass (lb)'],'legend':{'orient':'bottom','title':None,'columns':2,'labelLimit':250}},'tooltip':[{'field':'Range per leg (mi)'},{'field':'Mass type'},{'field':'Mass (lb)'}]},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
+ st.caption('Total aircraft mass is the selected flight-ready mass. Payload and battery trade within that fixed total; total mass includes both plus hardware and reserves. Only energy-feasible points are plotted.')
  st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
 
 try:
- r=size(**component_inputs,mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
+ r=size(**component_inputs,mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
 except ValueError as e: st.error(str(e)); st.stop()
 with mission_tab:
 
@@ -186,6 +198,14 @@ with mission_tab:
  b.metric('Required battery · average solar credit',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
  c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
  st.caption(f"Temperature-adjusted battery capacity: {r['battery_capacity_wh']:.0f} Wh; energy at 95% departure SOC: {r['battery_capacity_wh']*.95:.0f} Wh. Temperature affects capacity, not the 95% dispatch threshold.")
+ a,b,c=st.columns(3)
+ a.metric('Solar harvest',f"{r['solar_wh_day']:.1f} Wh/day")
+ b.metric('Perched consumption',f"{r['station_wh_day']:.1f} Wh/day")
+ full=r['recharge_to_full_h'];from_arrival=r['arrival_to_full_h']
+ if full is None:c.metric('Recharge to 100%','Not achievable')
+ else:c.metric('Recharge to 100%',f'{full:.1f} hours')
+ st.caption('Recharge to 100% is additional wait after the selected perched duration, with Tier 1 and the selected Tier 2/communications schedule continuing. 100% uses temperature/aging-adjusted capacity; average net solar includes those loads.')
+ if from_arrival is not None:st.write(f'From arrival, estimated time to 100%: **{from_arrival:.1f} hours ({from_arrival/24:.2f} days)** under the selected solar mix.')
  st.subheader('Recharge time needed for relocation')
  wait=r['relocation_charge_h']
  if wait is None:st.warning('Relocation cannot become energy-ready under the selected battery capacity, solar mix and continuing sensor/communications schedule.')
@@ -202,7 +222,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
