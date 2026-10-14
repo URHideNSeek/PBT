@@ -1,10 +1,10 @@
 """Mission-first inverse sizing using explicit engineering assumptions."""
-from math import ceil,isfinite
+from math import isfinite
 from model import DEFAULTS,evaluate
 
 def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day=40.,battery_fraction=.5,good_wh=90.,bad_wh=15.,checkin_min=1.,events_day=2.,event_min=1.,wake_wh=1.,tier1_w=5.,tier2_w=40.,comms_w=60.,reposition_mi=1.,**engineering):
  vals=[mass_lb,range_mi,days,good_pct,battery_fraction,good_wh,bad_wh,checkin_min,events_day,event_min,wake_wh,tier1_w,tier2_w,comms_w,reposition_mi,tier2_min_day]
- if any(not isfinite(x) for x in vals) or mass_lb<=0 or range_mi<0 or days<=0 or not 0<=good_pct<=100 or not 0<battery_fraction<1 or min(vals[5:])<0 or not 0<=tier2_min_day<=1440 or checkins<0 or checkins!=int(checkins): raise ValueError('Invalid mission input')
+ if any(isinstance(x,bool) or not isinstance(x,(int,float)) or not isfinite(x) for x in vals) or isinstance(checkins,bool) or not isinstance(checkins,(int,float)) or not isfinite(checkins) or mass_lb<=0 or range_mi<0 or days<=0 or not 0<=good_pct<=100 or not 0<battery_fraction<1 or min(vals[5:])<0 or not 0<=tier2_min_day<=1440 or checkins<0 or checkins!=int(checkins): raise ValueError('Invalid mission input')
  m=mass_lb*.45359237;p=DEFAULTS|engineering
  p.update(battery_kg=m*battery_fraction,other_kg=0.,growth_kg=0.,out_mi=range_mi,back_mi=range_mi,hours=0.,t2_min=0.,radio_min=0.)
  # Fixed nonbattery mass is allocated by the remaining mass; this does not prove packaging.
@@ -16,6 +16,7 @@ def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day
  scheduled_min=checkins*checkin_min
  anomaly_min=events_day*event_min
  comms_min=scheduled_min+anomaly_min
+ if comms_min>1440: raise ValueError('Communications activity exceeds 24 hours per day')
  # Tier2 power is incremental above continuously scheduled Tier1.
  daily_load=tier1_w*24+tier2_w*tier2_min_day/60+comms_w*comms_min/60
  weather_solar=(good_pct*good_wh+(100-good_pct)*bad_wh)/100
@@ -26,22 +27,34 @@ def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day
  solar_credit=weather_solar*days
  window=p['derate']*(p['soc']-p['floor'])/100
  required_no_solar=energy_needed/window
- required_average=max(r['mission_wh']/window,(energy_needed-solar_credit)/window)
- elapsed_comm=comms_min*days
- margin=r['usable_wh']+solar_credit-energy_needed
- # Arrival departure energy estimate; assume half transition/hover/climb allocation at each end.
- ratio=range_mi/1.150779/r['outbound_ground_kt']
+ # Solar cannot be spent before insertion or stored above derated capacity.
+ out_h=range_mi/1.150779/r['outbound_ground_kt']
  return_h=range_mi/1.150779/r['return_ground_kt']
- auxiliary=r['mission_wh']-p['reserve']-r['flight_w']*(ratio+return_h)
- arrival_energy=p['battery_kg']*p['whkg']*p['derate']*p['soc']/100-r['flight_w']*ratio-auxiliary/2
- end_energy=min(p['battery_kg']*p['whkg']*p['derate'],arrival_energy+solar_credit-station_energy)
- floor=p['battery_kg']*p['whkg']*p['derate']*p['floor']/100
- recovery_required=r['flight_w']*return_h+auxiliary/2+p['reserve']+floor
- reposition_required=r['flight_w']*reposition_mi/1.150779/p['speed']+auxiliary+p['reserve']+floor
- cap=p['battery_kg']*p['whkg']*p['derate']
+ auxiliary=r['mission_wh']-p['reserve']-r['flight_w']*(out_h+return_h)
+ insertion=r['flight_w']*out_h+auxiliary/2
+ retrieval=r['flight_w']*return_h+auxiliary/2
+ capacity=p['battery_kg']*p['whkg']*p['derate']
+ floor=capacity*p['floor']/100
+ arrival_energy=capacity*p['soc']/100-insertion
+ # Sleep/report allowance is charged before average stationary harvest.
+ after_report=arrival_energy-wake_wh
+ unclipped_end=after_report+net*days
+ end_energy=min(capacity,unclipped_end)
+ spilled=max(0.,unclipped_end-capacity)
+ minimum=min(after_report,end_energy)
+ insertion_ok=arrival_energy>=floor
+ station_ok=insertion_ok and minimum>=floor
+ recovery_required=retrieval+p['reserve']+floor
+ margin=end_energy-recovery_required
+ mission_ok=station_ok and margin>=0
+ required_average=max((insertion+wake_wh)/window,
+                      (energy_needed-solar_credit)/window,
+                      (retrieval+p['reserve'])/(p['derate']*(1-p['floor']/100)))
+ # Reposition follows the outbound track under the same steady wind.
+ reposition_required=r['flight_w']*reposition_mi/1.150779/r['outbound_ground_kt']+auxiliary+p['reserve']+floor
  def recharge(target):
+  if not station_ok or target>capacity: return None
   deficit=max(0.,target-end_energy)
-  if target>cap: return None
   if deficit==0: return 0.
   return deficit/net*24 if net>0 else None
- return dict(mass_lb=mass_lb,battery_kg=p['battery_kg'],nonbattery_kg=m-p['battery_kg'],required_nominal_no_solar_wh=required_no_solar,required_nominal_average_solar_wh=required_average,required_installed_whkg=required_average/p['battery_kg'],station_wh_day=daily_load,solar_wh_day=weather_solar,daily_balance_wh=net,energy_margin_average_wh=margin,recovery_charge_h=recharge(recovery_required),reposition_charge_h=recharge(reposition_required),required_energy_neutral_good_day_wh=(daily_load-(1-good_pct/100)*bad_wh)/(good_pct/100) if good_pct else None,flight_w=r['flight_w'],hover_w=r['hover_w'],thrust_per_rotor_kgf=r['thrust_required_kgf'],peak_w=r['peak_w'],comms_min_day=comms_min,scheduled_checkins_day=checkins,anomaly_reports_day=events_day,engineering=p)
+ return dict(insertion_energy_feasible=insertion_ok,station_energy_feasible=station_ok,mission_energy_feasible=mission_ok,battery_capacity_wh=capacity,arrival_energy_wh=arrival_energy,minimum_station_energy_wh=minimum,end_station_energy_wh=end_energy,spilled_solar_wh=spilled,recovery_required_wh=recovery_required,solar_credit_wh=solar_credit,station_energy_wh=station_energy,insertion_wh=insertion,retrieval_wh=retrieval,mass_lb=mass_lb,battery_kg=p['battery_kg'],nonbattery_kg=m-p['battery_kg'],required_nominal_no_solar_wh=required_no_solar,required_nominal_average_solar_wh=required_average,required_installed_whkg=required_average/p['battery_kg'],station_wh_day=daily_load,solar_wh_day=weather_solar,daily_balance_wh=net,energy_margin_average_wh=margin,recovery_charge_h=recharge(recovery_required),reposition_charge_h=recharge(reposition_required),required_energy_neutral_good_day_wh=(daily_load-(1-good_pct/100)*bad_wh)/(good_pct/100) if good_pct else None,flight_w=r['flight_w'],hover_w=r['hover_w'],thrust_per_rotor_kgf=r['thrust_required_kgf'],peak_w=r['peak_w'],comms_min_day=comms_min,scheduled_checkins_day=checkins,anomaly_reports_day=events_day,engineering=p)
