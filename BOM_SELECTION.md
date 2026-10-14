@@ -89,3 +89,14 @@ Primary sources:
 - Solar and battery time-series modeling, https://samrepo.nlr.gov/help/battery_storage.html
 
 This section supersedes earlier statements describing average continuous harvest or charging time calculated solely as deficit / average daily surplus.
+
+## Three energy handoffs: symmetric-leg baseline
+The mission baseline now mirrors insertion energy for recovery, at the same aircraft mass, distance and flight conditions. A default relocation hop has the insertion distance and the same complete-leg transition allowance. Recovery from the new perch is one leg, not the former outward-hop distance of two legs.
+
+- Persist entry = departure battery energy minus complete insertion-leg energy, before the separate sensor-node wake/report allowance.
+- Recovery-ready threshold = one complete leg + contingency reserve + battery minimum.
+- Same-distance hop-ready threshold = two complete legs + contingency reserve + battery minimum.
+
+Contingency and battery minimum are included once in each threshold. They are protected constraints, not loads to consume. The app displays all three Wh handoffs and the first hop-ready time from arrival; the existing relocation recharge output remains additional wait after the requested perched interval. Sensor and communications schedules continue during charging. Automatic sensor shutdown to prioritize charging is not assumed.
+
+The symmetric baseline intentionally gives no reciprocal tailwind credit: recovery uses the insertion-leg conditions. Programmatic route overrides can set symmetric_legs=False and next_return_mi for unequal conditions/distances. Reposition distance can also be supplied independently. Chronological daytime/night charging, capacity and temperature limits, and recovery protection still apply. This section supersedes the earlier outward/collinear relocation assumption.
