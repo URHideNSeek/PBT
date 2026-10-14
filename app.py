@@ -152,7 +152,7 @@ with sizing_tab:
   event_duration=st.number_input('Minutes per anomaly report',min_value=0.,value=1.)
   sleep=st.number_input('Sleep-transition communication allowance per mission (Wh)',min_value=0.,value=1.)
   hop=distance
-  st.caption('Relocation hop equals the initial insertion distance. An outward hop reserves a return from the next perch at twice the insertion distance.')
+  st.caption('Relocation hop equals the initial insertion distance. Recovery and a same-distance hop use the same complete-leg energy as insertion. The new perch assumes a single-leg recovery distance under matched flight conditions.')
   wind_ms=st.slider('Steady wind (m/s)',0.,15.5,10.2888888889,step=.1)
   wind=wind_ms/.514444444444
   speed_ms=st.slider('True cruise airspeed (m/s)',5.,31.,18.0055555556,step=.1)
@@ -258,11 +258,18 @@ with mission_tab:
  else:c.metric('Recharge to 100%',f'{full:.1f} hours')
  st.caption('Recharge to 100% is additional wait after the selected perched duration, with Tier 1 and the selected Tier 2/communications loads continuing. 100% uses temperature/aging-adjusted capacity. Daylight, night, net charging power and charging efficiency are simulated; charging taper is not modeled.')
  if from_arrival is not None:st.write(f'From arrival, estimated time to 100%: **{from_arrival:.1f} hours ({from_arrival/24:.2f} days)** under the selected daylight and solar mix.')
+ st.subheader('Energy handoffs')
+ a,b,c=st.columns(3)
+ a.metric('Persist entry energy',f"{r['persist_entry_wh']:.1f} Wh")
+ b.metric('Recovery-ready threshold',f"{r['recovery_threshold_wh']:.1f} Wh")
+ c.metric('Hop-ready threshold',f"{r['hop_threshold_wh']:.1f} Wh")
+ st.caption(f"One complete leg: {r['leg_energy_wh']:.1f} Wh. Recovery protects one leg; a same-distance hop protects two. Both thresholds include the contingency reserve and battery minimum once. Persist entry is before the separate wake/report allowance.")
+ if r['arrival_to_hop_h'] is not None:st.write(f"Hop-ready from arrival: **{r['arrival_to_hop_h']:.1f} hours**, with the selected sensing and communications loads continuing.")
  st.subheader('Recharge time needed for relocation')
  wait=r['relocation_charge_h']
  if wait is None:st.warning('Relocation is not energy-ready within the 30-day charging search, or charging would breach the return reserve/capacity limits.')
  else:st.metric('Recharge time needed for relocation',f'{wait:.1f} hours',help='Calculated after the selected perched duration; return energy remains protected.')
- st.caption(f'Relocation: {distance_km:g} km. Protected return from the new perch: {2*distance_km:g} km, plus landing reserve. Recharge uses daylight-only net solar after ongoing stationary loads. Zero means no additional charging wait is required.')
+ st.caption(f'Relocation: {distance_km:g} km. Protected return from the new perch: {distance_km:g} km, plus landing reserve. Recharge uses daylight-only net solar after ongoing stationary loads. Zero means no additional charging wait is required.')
  if not r['return_reserve_preserved']:
   st.error('The requested perched duration would consume protected return energy. The aircraft must recover or reduce activity before reaching that limit.')
   if r['maximum_protected_perched_hours'] is not None:st.write(f"Maximum perched duration before the return-energy limit: {r['maximum_protected_perched_hours']:.1f} hours under the average-solar model.")
