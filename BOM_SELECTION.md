@@ -20,7 +20,7 @@ Battery uses the selected aircraft mass fraction. The envelope allocates remaini
 | Solar | 72% array; 28% charger |
 | Structure/mounting/mechanisms | 65% enclosure/mounting; 35% perch/transformation mechanism |
 
-Separate editable reserves cover wires/connectors, fasteners, sealants/adhesives and growth. Additional allocations cover GNSS, actuators and power conversion/distribution. A selected payload sensor is an additional installed device, including an extra mission camera/GNSS if selected. Controller and field kit are outside aircraft takeoff mass.
+Separate editable reserves cover wires/connectors, fasteners, sealants/adhesives and growth. Additional allocations cover GNSS, actuators and power conversion/distribution. The shared sensor table puts locked Flight / perching before Tier 1 and Tier 2. Required IMU, compass, barometer, GNSS, navigation camera, distance, contact, latch-position and battery-health hardware is permanently installed. Tier checkboxes enable stationary collection on the same device; both unchecked leaves it available for flight/perching/protection. Host controller/GNSS/BMS mass is counted once. Distance/contact/latch sensors add a fixed 30 g installation allowance. Optional mission-only sensors add mass only when selected. Camera/range idle and additional stationary active power are accounted through the shared profile; controller/GNSS/BMS electronics baseline remains in housekeeping. Controller and field kit are outside aircraft takeoff mass.
 
 The allocated BOM total plus unused headroom equals selected flight-ready mass; negative headroom fails mass closure. Assumptions do not establish manufacturing feasibility. Motor loads depend on total mass, including reserves.
 
@@ -44,3 +44,5 @@ Controlled sourcing requires source-backed NDAA and exact-model Blue Framework e
 - Sensors: selected interface, rail, active/sleep allowances, mass, temperature and sensor-specific measurement limits; camera image size/frame rate, GNSS accuracy, RF tuning/bandwidth and passive radar coherence are explicit.
 
 CSV/JSON exports retain requirements, allocations, selected configuration, source URLs, checked dates and rejected-candidate reasons. Saved trades and envelope-point sizing freeze their sensor plan/settings.
+
+Required hardware is not a claim that the sensing suite alone proves autonomous perching. Detection/geometry, approach accuracy, secured-state verification, mechanism loads and integrated tests remain required. The flight/perching checkbox column is fixed; stationary-tier boxes are editable. Required-device quantity is one and incremental sensor mass is zero because its host BOM allocation already includes it. Measurement constraints from a shared sensor profile tighten the host row instead of creating another device.
