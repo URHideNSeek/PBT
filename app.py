@@ -33,6 +33,30 @@ with st.sidebar:
   whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
   derate=st.slider('Temperature/aging capacity factor',.1,1.,.9,.05)
   thermal_unused=st.caption('Detailed flight/prop/solar assumptions remain in advanced_app.py. This mission view is an inverse sizing study, not full feasibility verification.')
+st.divider()
+st.subheader('Mass envelope')
+st.caption('Maximum achievable range per leg versus flight-ready mass, for several times on target. All mission activities remain nonzero.')
+ec1,ec2,ec3=st.columns(3)
+env_good=ec1.slider('Envelope good-solar days (%)',1,100,100,key='env_good')
+env_check=ec2.number_input('Envelope check-ins per day',min_value=1,max_value=48,value=1,key='env_check')
+env_t2=ec3.number_input('Envelope Tier 2 minutes per day',min_value=1,max_value=1440,value=1,key='env_t2')
+env_deadline=st.number_input('Envelope recharge deadline (hours)',min_value=1.,max_value=720.,value=1.,step=1.,key='env_deadline')
+st.caption('This envelope uses the current Advanced power, wind and battery assumptions. It allocates remaining mass to battery after reserving 4.35 kg for all nonbattery equipment. Lower activity defaults show an optimistic boundary, not a guaranteed operating envelope.')
+if st.button('Calculate mass envelope'):
+ from envelope import curve
+ lines={}
+ for target_h in [1,6,24,72]:
+  points=curve(target_h,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
+  lines[f'{target_h} hours on target']=[x['Max range per leg mi'] for x in points]
+ frame=pd.DataFrame(lines,index=[x['Mass lb'] for x in points]);frame.index.name='Flight-ready mass (lb)'
+ st.session_state['envelope_result']={'frame':frame,'settings':{'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline}}
+if 'envelope_result' in st.session_state:
+ saved=st.session_state['envelope_result']
+ st.line_chart(saved['frame'],x_label='Flight-ready mass (lb)',y_label='Maximum range per leg (statute miles)')
+ st.caption('Showing the last calculated envelope. Recalculate after changing any input. Each curve is a conditional boundary; lower range down to 0.5 mile is energy-feasible under those assumptions. Missing points are infeasible. Range is capped at the 15-mile search limit.')
+ st.json(saved['settings'],expanded=False)
+ st.download_button('Download envelope CSV',saved['frame'].to_csv(),file_name='mass_envelope.csv')
+
 try:
  r=size(mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
 except ValueError as e: st.error(str(e)); st.stop()
