@@ -134,6 +134,9 @@ with sizing_tab:
   st.caption('Battery mass and total aircraft mass are derived from the selected payload and mission, including return-energy protection.')
   good_wh=st.number_input('DC-bus solar harvest on good day (Wh)',min_value=0.,value=90.)
   bad_wh=st.number_input('DC-bus solar harvest on bad day (Wh)',min_value=0.,value=15.)
+  node_sleep_w=st.number_input('Sensor-node sleep power (W)',min_value=0.,value=.2)
+  node_sleep_margin=st.number_input('Sleep margin above protected recovery energy (Wh)',min_value=0.,value=3.)
+  node_wake_margin=st.number_input('Tier 1 restart margin above protected recovery energy (Wh)',min_value=0.,value=5.)
   housekeeping_extra=st.number_input('Low-power Tier 1 monitor / housekeeping (W)',min_value=0.,value=1.)
   compute_sleep_w=st.number_input('Payload computer sleep power (W)',min_value=0.,value=.05)
   flight_sleep_w=st.number_input('Flight controller sleep power (W)',min_value=0.,value=.02)
@@ -191,7 +194,7 @@ with sizing_tab:
  st.caption(f"Derived stationary loads: Tier 1 + housekeeping {t1:.2f} W; Tier 2 active increment {t2:.2f} W. Selected sensors: {plan['sensor_kg']*1000:.1f} g. Logged data: {plan['daily_gb']:.3f} GB/day.")
  st.dataframe(pd.DataFrame([{'Power state':'Tier 1 + standby','Daily energy (Wh)':t1*24},{'Power state':'Tier 2 sensors + compute wake','Daily energy (Wh)':t2*tier2/60},{'Power state':'Scheduled communications + compute wake','Daily energy (Wh)':comms_increment*checkins*duration/60},{'Power state':'Anomaly reports + compute wake','Daily energy (Wh)':comms_increment*events*event_duration/60}]),hide_index=True,width='stretch')
 
-model_inputs=dict(profile_fraction=profile_fraction,tip_speed_m_s=tip_speed_m_s,charge_temperature_c=charge_temperature_c,charge_min_c=charge_min_c,charge_max_c=charge_max_c,flight_electronics_w=flight_electronics,rho=rho,arrival_hour=arrival_hour,charge_limit_w=charge_limit_w,charge_eff=charge_eff,**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
+model_inputs=dict(manage_sleep=True,sleep_w=node_sleep_w,sleep_margin_wh=node_sleep_margin,wake_margin_wh=node_wake_margin,profile_fraction=profile_fraction,tip_speed_m_s=tip_speed_m_s,charge_temperature_c=charge_temperature_c,charge_min_c=charge_min_c,charge_max_c=charge_max_c,flight_electronics_w=flight_electronics,rho=rho,arrival_hour=arrival_hour,charge_limit_w=charge_limit_w,charge_eff=charge_eff,**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
 from payload_sizing import size_payload
 current=size_payload(payload_kg,distance,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
 if current is None:
@@ -203,7 +206,7 @@ r=current['result'];r['atmosphere']=atmosphere;mass=r['mass_lb'];mass_kg=mass*.4
 with mission_tab:
  st.subheader('Flight')
  st.caption(f'Site elevation {elevation_m:,.0f} m / {elevation_m/.3048:,.0f} ft MSL · density altitude {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft · air density {rho:.3f} kg/m³.')
- st.caption('Insertion determines the energy handed to Persist. The aircraft and battery are sized for your requested mission; the supported Persist duration below is evaluated using that resulting configuration.')
+ st.caption('Insertion determines the energy handed to Persist. Aircraft and battery sizing protects insertion and recovery only. Persist uses the resulting fixed battery; perched duration, solar and activity schedules do not resize the aircraft.')
  a,b,c=st.columns(3)
  a.metric('Selected payload',f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb')
  b.metric('Calculated total aircraft mass',f'{mass_kg:.3f} kg / {mass:.2f} lb')
@@ -222,9 +225,9 @@ with mission_tab:
 
  st.divider()
  st.subheader('Payload mass versus range')
- st.caption('Payload is the selected total mission payload, including installed mission sensors and any extra unpowered payload. Total aircraft mass is calculated from hardware, reserves, payload and the minimum battery allocation that closes the mission.')
+ st.caption('Payload is the selected total mission payload, including installed mission sensors and any extra unpowered payload. Total aircraft mass is calculated from hardware, reserves, payload and the minimum battery allocation that supports insertion and recovery.')
  calculate_envelope=st.button('Calculate payload envelope')
- envelope_inputs=('altitude-temperature-v1',elevation_m,json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
+ envelope_inputs=('flight-only-node-sleep-v1',node_sleep_w,node_sleep_margin,node_wake_margin,elevation_m,json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
   from payload_sizing import payload_mass_curve
   points=payload_mass_curve(payload_kg,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
@@ -252,16 +255,16 @@ with mission_tab:
    'tooltip':[{'field':'Range per leg (km)','format':'.2f'},{'field':'Range per leg (mi)','format':'.2f'},{'field':field,'format':'.2f'},{'field':field.replace('(kg)','(lb)'),'format':'.2f'}]}})
  st.vega_lite_chart(chart_data,{'layer':layers,'resolve':{'scale':{'y':'independent'}},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
  st.caption('Payload uses the left axis, fixed at 0–3 kg (0–6.61 lb). Total aircraft mass uses the right axis. Both axes and range ticks show metric and imperial equivalents; values above 3 kg payload are clipped in this view and remain available in the CSV.')
- st.caption('Payload mass is held at the slider selection. Total aircraft mass changes with the battery required at each range. Only feasible points within the engineering limits are plotted.')
- st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
+ st.caption('Payload mass is held at the slider selection. Total aircraft mass changes with the battery required at each range. Only flight-feasible points within the engineering limits are plotted.')
+ st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete insertion and recovery within the engineering limits. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
 
 with mission_tab:
  st.divider()
  st.subheader('Persist')
  st.caption('Begins with the energy left after insertion, perching and transformation. Propulsion is off; sensor, housekeeping and intermittent communications loads continue, with daylight solar replenishment.')
- from perched import simulate
- persistence=simulate(r['persist_entry_wh']-sleep,r['battery_capacity_wh'],720,arrival_hour,r['station_wh_day'],r['solar_wh_day'],protected=r['recovery_threshold_wh'],charge_limit_w=r['charge_limit_w'],charge_eff=charge_eff)
+ from perched import sensor_node
+ persistence=sensor_node(r['persist_entry_wh']-sleep,r['battery_capacity_wh'],720,arrival_hour,r['station_wh_day'],r['solar_wh_day'],protected=r['recovery_threshold_wh'],sleep_w=node_sleep_w,wake_margin_wh=node_wake_margin,sleep_margin_wh=node_sleep_margin,start_asleep=not r['good_day_sustainable'],charge_limit_w=r['charge_limit_w'],charge_eff=charge_eff)
  supported=persistence['first_unprotected_h']
  r['supported_persist_h']=720. if supported is None else supported
  r['persist_horizon_reached']=supported is None
@@ -270,20 +273,32 @@ with mission_tab:
  a.metric('Requested Persist duration',f'{hours:g} h / {hours/24:.2f} days')
  b.metric('Supported Persist duration',f'{supported:.1f} h / {supported/24:.2f} days' if supported is not None else 'At least 30 days')
  c.metric('Energy after requested Persist',f"{r['end_station_energy_wh']:.1f} Wh")
+ st.caption('Supported duration may include sleep periods; it is not uninterrupted sensing time.')
  st.caption('Supported duration ends before the protected recovery threshold is crossed. The search covers 30 days under the repeating average solar profile; it does not establish unlimited endurance or tolerance of consecutive bad-weather days.')
  a,b,c=st.columns(3)
- a.metric('Required nominal battery · no solar credit',f"{r['required_nominal_no_solar_wh']:.0f} Wh")
- b.metric('Required battery · average solar credit',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
+ a.metric('Continuous-load battery estimate · no solar',f"{r['required_nominal_no_solar_wh']:.0f} Wh")
+ b.metric('Continuous-load battery estimate · solar',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
  c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
+ st.subheader('24-hour energy sustainability and sleep')
+ a,b,c=st.columns(3)
+ a.metric('Good-day net energy',f"{r['good_day_net_wh']:+.1f} Wh/day")
+ b.metric('Sleep threshold',f"{r['sleep_threshold_wh']:.1f} Wh")
+ c.metric('Tier 1 restart threshold',f"{r['wake_threshold_wh']:.1f} Wh")
+ st.write(f"Sleep during selected interval: **{r['sleep_hours']:.1f} hours**.")
+ if r['wake_threshold_wh']>r['battery_capacity_wh']:st.warning('The restart threshold exceeds battery capacity; Tier 1 cannot restart until the threshold or configuration is changed.')
+ if r['sleep_hours']>0:st.info('Requested sensor/communications activity is suspended during sleep; supported perched duration includes those inactive periods.')
+ if not r['good_day_sustainable']:st.warning('Combined Tier 1, Tier 2 and communications demand is not sustainable over a good-solar day. The node enters sleep and resumes activity only above its restart threshold; sensing is intermittent.')
+ st.caption('Hop energy is not protected. Only recovery energy is protected. Sleep retains the configured low-power monitor; scheduled sensing and communications are suspended while asleep.')
  with st.container(border=True):
   st.markdown('**Persist energy history**')
-  st.dataframe(pd.DataFrame([{'State / item':'Insertion flight','Energy (Wh)':r['insertion_wh']},{'State / item':'Perched loads, including wake/report','Energy (Wh)':r['station_energy_wh']},{'State / item':'Available solar during perched interval','Energy (Wh)':r['solar_credit_wh']},{'State / item':'Retrieval flight','Energy (Wh)':r['retrieval_wh']},{'State / item':'Protected contingency reserve (not consumed load)','Energy (Wh)':r['engineering']['reserve']}]),hide_index=True)
+  st.dataframe(pd.DataFrame([{'State / item':'Insertion flight','Energy (Wh)':r['insertion_wh']},{'State / item':'Perched loads, including wake/report','Energy (Wh)':r['actual_station_energy_wh']},{'State / item':'Available solar during perched interval','Energy (Wh)':r['solar_credit_wh']},{'State / item':'Retrieval flight','Energy (Wh)':r['retrieval_wh']},{'State / item':'Protected contingency reserve (not consumed load)','Energy (Wh)':r['engineering']['reserve']}]),hide_index=True)
   from perched import timeline
   start=r['arrival_energy_wh']-sleep;capacity=r['battery_capacity_wh']
   _,_,_,_,_,energy_rows=timeline(hours,arrival_hour,r['station_wh_day'],r['solar_wh_day'],r['charge_limit_w'],charge_eff)
   energy_trace=[{'Perched hour':0.,'Battery energy (Wh)':start,'Protected return energy (Wh)':r['return_protected_wh']}]+[{'Perched hour':t,'Battery energy (Wh)':start+cum-max(0.,start+peak-capacity),'Protected return energy (Wh)':r['return_protected_wh']} for t,cum,peak in energy_rows]
-  st.line_chart(pd.DataFrame(energy_trace).set_index('Perched hour'))
-  st.caption('5-minute daylight/night simulation. Solar input and loads are separate; only net surplus charges the pack. Exact sensor/radio burst timing and real weather sequences are not modeled.')
+  energy_trace=r['node_trace'] or energy_trace
+  st.line_chart(pd.DataFrame(energy_trace).drop(columns=['State'],errors='ignore').set_index('Perched hour'))
+  st.caption('5-minute daylight/night and sleep/wake simulation. Solar input and loads are separate; only net surplus charges the pack. Exact sensor/radio burst timing and real weather sequences are not modeled.')
  st.caption(f"Temperature-adjusted battery capacity: {r['battery_capacity_wh']:.0f} Wh; energy at 95% departure SOC: {r['battery_capacity_wh']*.95:.0f} Wh. Temperature affects capacity, not the 95% dispatch threshold.")
  a,b,c=st.columns(3)
  a.metric('Solar harvest',f"{r['solar_wh_day']:.1f} Wh/day")
@@ -291,15 +306,15 @@ with mission_tab:
  full=r['recharge_to_full_h'];from_arrival=r['arrival_to_full_h']
  if full is None:c.metric('Recharge to 100%','Not ready within 30 days')
  else:c.metric('Recharge to 100%',f'{full:.1f} hours')
- st.caption('Recharge to 100% is additional wait after the selected perched duration, with Tier 1 and the selected Tier 2/communications loads continuing. 100% uses temperature/aging-adjusted capacity. Daylight, night, net charging power and charging efficiency are simulated; charging taper is not modeled.')
+ st.caption('Recharge to 100% is additional wait after the selected perched duration, with Tier 1 and the selected Tier 2/communications loads continuing while awake and suspended during sleep. 100% uses temperature/aging-adjusted capacity. Daylight, night, net charging power and charging efficiency are simulated; charging taper is not modeled.')
  if from_arrival is not None:st.write(f'From arrival, estimated time to 100%: **{from_arrival:.1f} hours ({from_arrival/24:.2f} days)** under the selected daylight and solar mix.')
  st.subheader('Energy handoffs')
  a,b,c=st.columns(3)
  a.metric('Persist entry energy',f"{r['persist_entry_wh']:.1f} Wh")
  b.metric('Recovery-ready threshold',f"{r['recovery_threshold_wh']:.1f} Wh")
  c.metric('Hop-ready threshold',f"{r['hop_threshold_wh']:.1f} Wh")
- st.caption(f"One complete leg: {r['leg_energy_wh']:.1f} Wh. Recovery protects one leg; a same-distance hop protects two. Both thresholds include the contingency reserve and battery minimum once. Persist entry is before the separate wake/report allowance.")
- if r['arrival_to_hop_h'] is not None:st.write(f"Hop-ready from arrival: **{r['arrival_to_hop_h']:.1f} hours**, with the selected sensing and communications loads continuing.")
+ st.caption(f"One complete leg: {r['leg_energy_wh']:.1f} Wh. Recovery protects one leg; same-distance hop readiness indicates two legs but is not protected. Readiness thresholds include contingency reserve and battery minimum once. Persist entry is before the separate wake/report allowance.")
+ if r['arrival_to_hop_h'] is not None:st.write(f"Hop-ready from arrival: **{r['arrival_to_hop_h']:.1f} hours**, with sleep/wake management of the selected sensing and communications loads.")
  st.subheader('Recharge time needed for relocation')
  wait=r['relocation_charge_h']
  if wait is None:st.warning('Relocation is not energy-ready within the 30-day charging search, or charging would breach the return reserve/capacity limits.')
@@ -315,7 +330,7 @@ with mission_tab:
  if not r['station_energy_feasible']: st.error('Battery crosses the analysis minimum during the station mission. Recharge readiness is not claimed.')
  if not r['mission_energy_feasible']: st.error(f"Assumed battery does not close the mission. Recovery energy margin: {r['energy_margin_average_wh']:.0f} Wh.")
  else: st.success(f"Chronological energy margin: {r['energy_margin_average_wh']:.0f} Wh. Weather sequencing and other closure checks still require review.")
- st.info('Mass includes payload. Battery mass and flight power remain coupled. The daylight profile uses an average good/bad-day yield; a string of bad days may still fail. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
+ st.info('Mass includes payload. Battery sizing depends on flight, not perched duration or activity. Peak flight power and battery mass remain coupled. The daylight profile uses an average good/bad-day yield; a string of bad days may still fail. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
  record={'name':name,'atmosphere':atmosphere,'mission':{'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
