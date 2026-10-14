@@ -1,12 +1,13 @@
 import json
 from metric_units import metric_view
+from atmosphere import conditions
 import pandas as pd
 import streamlit as st
 from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POINTS
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_payload':.06,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+STARTUP_PRESET={'mission_payload':.06,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25),'mission_elevation':0.}
 PRESET_VERSION='payload-driven-v5'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
@@ -33,6 +34,12 @@ with st.sidebar:
  tier2=st.slider('Tier 2 active minutes per day',0,360,key='mission_tier2')
  temp_low,temp_high=st.slider('Operating temperature range (°C)',-20,50,key='mission_temperature')
  st.caption(f'{temp_low:g}–{temp_high:g} °C / {temp_low*1.8+32:g}–{temp_high*1.8+32:g} °F')
+ st.session_state.setdefault('mission_elevation',0.)
+ elevation_m=st.slider('Site elevation above MSL (m)',-500.,5000.,step=50.,key='mission_elevation')
+ st.caption(f'{elevation_m:g} m / {elevation_m/.3048:,.0f} ft MSL')
+ atmosphere=conditions(elevation_m,temp_high)
+ rho=atmosphere['density_kg_m3'];density_altitude_m=atmosphere['density_altitude_m']
+ st.caption(f'Derived density altitude: {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft · air density {rho:.3f} kg/m³ at {temp_high:g} °C. Assumes standard pressure and dry air; uses the hottest selected temperature for the lowest-density flight case.')
  temperature_factor=temperature_capacity_factor(temp_low,temp_high)
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
@@ -137,7 +144,7 @@ with sizing_tab:
   flight_electronics=st.number_input('Active flight electronics load (W)',min_value=0.,value=6.)
   profile_fraction=st.slider('Reference hover blade-profile power fraction',.01,.5,.15,.01)
   tip_speed_m_s=st.number_input('Reference rotor tip speed (m/s)',min_value=50.,max_value=300.,value=180.)
-  rho=st.number_input('Flight air density (kg/m³)',min_value=.5,max_value=1.5,value=1.225)
+  st.caption(f'Flight air density is derived from initial elevation/temperature selectors: {rho:.3f} kg/m³. Density altitude: {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft.')
   arrival_hour=st.number_input('Perch arrival solar hour (0–24)',min_value=0.,max_value=23.99,value=9.)
   charge_limit_w=st.number_input('Maximum net battery charging power (W)',min_value=0.,value=100.)
   charge_temperature_c=st.number_input('Assumed battery temperature during charging (°C)',min_value=-40.,max_value=70.,value=20.)
@@ -191,10 +198,11 @@ if current is None:
  if payload_kg<plan['sensor_kg']:st.error(f"Selected sensors require {plan['sensor_kg']:.3f} kg payload. Increase payload or reduce sensor selections.")
  else:st.error('No aircraft/battery allocation closes this mission within the engineering limits. Adjust payload, range, perched schedule or engineering assumptions.')
  st.stop()
-r=current['result'];mass=r['mass_lb'];mass_kg=mass*.45359237;fraction=current['Battery fraction']
+r=current['result'];r['atmosphere']=atmosphere;mass=r['mass_lb'];mass_kg=mass*.45359237;fraction=current['Battery fraction']
 
 with mission_tab:
  st.subheader('Flight')
+ st.caption(f'Site elevation {elevation_m:,.0f} m / {elevation_m/.3048:,.0f} ft MSL · density altitude {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft · air density {rho:.3f} kg/m³.')
  st.caption('Insertion determines the energy handed to Persist. The aircraft and battery are sized for your requested mission; the supported Persist duration below is evaluated using that resulting configuration.')
  a,b,c=st.columns(3)
  a.metric('Selected payload',f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb')
@@ -216,7 +224,7 @@ with mission_tab:
  st.subheader('Payload mass versus range')
  st.caption('Payload is the selected total mission payload, including installed mission sensors and any extra unpowered payload. Total aircraft mass is calculated from hardware, reserves, payload and the minimum battery allocation that closes the mission.')
  calculate_envelope=st.button('Calculate payload envelope')
- envelope_inputs=('symmetric-energy-handoffs-v1',json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
+ envelope_inputs=('altitude-temperature-v1',elevation_m,json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
   from payload_sizing import payload_mass_curve
   points=payload_mass_curve(payload_kg,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
@@ -310,7 +318,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery mass and flight power remain coupled. The daylight profile uses an average good/bad-day yield; a string of bad days may still fail. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'mission':{'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'atmosphere':atmosphere,'mission':{'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
