@@ -8,7 +8,7 @@ class InteractionTests(unittest.TestCase):
   for kind in ['slider','number_input']:
    for w in getattr(a,kind):
     definitions.append((kind,w.label,w.value,[w.min,w.value,w.max if w.max is not None else max(1000.,w.value*10)]))
-  self.assertEqual(len(definitions),26)
+  self.assertEqual(len(definitions),28)
   def set_value(kind,label,value):
    next(w for w in getattr(a,kind) if w.label==label).set_value(value)
   def run():
