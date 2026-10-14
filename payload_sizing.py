@@ -9,9 +9,9 @@ def size_payload(payload_kg,range_mi,hours,*,hardware_kg,sensor_kg=0.,**engineer
  engineering=dict(engineering);engineering.pop('battery_fraction',None)
  maximum=(engineering.get('mass_max',DEFAULTS['mass_max'])*.45359237-hardware_kg-payload_kg)*.999999
  if maximum<=0:return None
- def candidate(battery):
+ def candidate(battery,full=False):
   gross=hardware_kg+payload_kg+battery
-  try:r=size(mass_lb=gross/.45359237,range_mi=range_mi,days=hours/24,battery_fraction=battery/gross,sensor_kg=payload_kg,reposition_mi=range_mi,**engineering)
+  try:r=size(mass_lb=gross/.45359237,range_mi=range_mi,days=hours/24,battery_fraction=battery/gross,sensor_kg=payload_kg,reposition_mi=range_mi,calculate_recharge=full,**engineering)
   except ValueError:return None
   p=r['engineering']
   if not (r['mission_energy_feasible'] and p['prop']<p['prop_max'] and p['solar']<p['solar_max'] and r['thrust_per_rotor_kgf']<=p['thrust'] and max(r['hover_w'],r['flight_w'])<=battery*p['wkg'] and r['peak_w']<=battery*p['peak_wkg']):return None
@@ -28,7 +28,7 @@ def size_payload(payload_kg,range_mi,hours,*,hardware_kg,sensor_kg=0.,**engineer
     mid=(lo+hi)/2
     if candidate(mid):hi=mid
     else:lo=mid
-   return candidate(hi)
+   return candidate(hi,True)
   previous=battery
  return None
 
