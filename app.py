@@ -7,20 +7,20 @@ st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
 with st.sidebar:
  st.header('Platform & mission')
- mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,19.5,.1)
- distance=st.slider('Range per leg (statute miles)',0.,10.,6.,.5)
- hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=6.,step=1.)
- good=st.slider('Good solar days (%)',0,100,50)
+ mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,12.,.1)
+ distance=st.slider('Range per leg (statute miles)',0.,10.,.5,.5)
+ hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=1.,step=1.)
+ good=st.slider('Good solar days (%)',0,100,100)
  st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
- deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=24.,step=1.)
- checkins=st.slider('Scheduled communications check-ins per day',0,48,4)
+ deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=1.,step=1.)
+ checkins=st.slider('Scheduled communications check-ins per day',0,48,1)
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
- tier2=st.slider('Tier 2 active minutes per day',0,360,40)
+ tier2=st.slider('Tier 2 active minutes per day',0,360,1)
 
 mission_tab,sizing_tab=st.tabs(['Mission & Envelope','Engineering Sizing'])
 with sizing_tab:
  with st.expander('Engineering model assumptions (not mission requirements)'):
-  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,50)/100
+  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,20)/100
   good_wh=st.number_input('Battery-delivered harvest on good day (Wh)',min_value=0.,value=90.)
   bad_wh=st.number_input('Battery-delivered harvest on bad day (Wh)',min_value=0.,value=15.)
   t1=st.number_input('Average Tier 1 + housekeeping power (W)',min_value=0.,value=5.)
