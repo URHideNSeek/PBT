@@ -8,7 +8,7 @@ class InteractionTests(unittest.TestCase):
   for kind in ['slider','number_input']:
    for w in getattr(a,kind):
     values=[(w.min,w.min),w.value,(w.max,w.max)] if isinstance(w.value,tuple) else [w.min,w.value,w.max if w.max is not None else max(1000.,w.value*10)]
-    if w.label in {"Flight-ready mass, including payload (kg)","Range per leg (km)","Perched time (hours)","Good solar days (%)","Scheduled communications check-ins per day","Tier 2 active minutes per day","Operating temperature range (°C)"}: definitions.append((kind,w.label,w.value,values))
+    if w.label in {"Payload mass (kg)","Range per leg (km)","Perched time (hours)","Good solar days (%)","Scheduled communications check-ins per day","Tier 2 active minutes per day","Operating temperature range (°C)"}: definitions.append((kind,w.label,w.value,values))
   self.assertEqual(len(definitions),7)
   def set_value(kind,label,value):
    next(w for w in getattr(a,kind) if w.label==label).set_value(value)
@@ -20,7 +20,7 @@ class InteractionTests(unittest.TestCase):
     set_value(kind,label,v);run()
    set_value(kind,label,default)
   # Exercise all pairs/triples of the seven customer controls at endpoint mixtures.
-  labels={'Flight-ready mass, including payload (kg)','Range per leg (km)','Perched time (hours)','Good solar days (%)','Scheduled communications check-ins per day','Tier 2 active minutes per day','Operating temperature range (°C)'}
+  labels={'Payload mass (kg)','Range per leg (km)','Perched time (hours)','Good solar days (%)','Scheduled communications check-ins per day','Tier 2 active minutes per day','Operating temperature range (°C)'}
   core=[d for d in definitions if d[1] in labels]
   for n in [2,3]:
    for subset in itertools.combinations(core,n):
