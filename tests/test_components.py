@@ -30,7 +30,7 @@ class ComponentTests(unittest.TestCase):
  def test_bom_mass_no_double_count(self):
   p=profile('visible');plan=sensor_plan([],['visible'],{'visible':p},1,1,1)
   r=size(sensor_kg=plan['sensor_kg']);b=bom(r,derive(r),plan,settings());d={x['id']:x for x in b['rows']}
-  expected=(r['battery_kg']+1.05+.22+.87+.25+plan['sensor_kg'])*1000+1425.
+  expected=(r['battery_kg']+1.05+.22+.87+.25+plan['sensor_kg'])*1000+1455.
   self.assertAlmostEqual(b['allocated_g'],expected)
   for key in ['STR','WIR','FST','SEA','GRO']:self.assertIn(key,d)
   self.assertEqual(sum(x['mass_total_g'] for x in b['rows']),b['allocated_g'])
@@ -73,3 +73,18 @@ class ComponentUI(unittest.TestCase):
   self.assertTrue(any(x.label=='COTS rows with at least one specification match' and x.value.startswith('1 /') for x in a.metric))
   next(x for x in a.button if x.label=='Save mission to comparison').click().run(timeout=30)
   self.assertIn('component_plan',a.session_state['mission_scenarios'][0])
+
+class LockedSensorsUI(unittest.TestCase):
+ def test_required_sensors_remain_checked_with_no_mission_payload(self):
+  from streamlit.testing.v1 import AppTest
+  a=AppTest.from_file(str(ROOT/'app.py')).run(timeout=30)
+  for i in range(9):
+   w=a.checkbox(key='required_sensor_'+str(i))
+   self.assertTrue(w.value);self.assertTrue(w.disabled)
+  for key in SENSORS:
+   a.checkbox(key='sensor_t1_'+key).uncheck()
+   a.checkbox(key='sensor_t2_'+key).uncheck()
+  a.slider(key='mission_tier2').set_value(0).run(timeout=30)
+  self.assertFalse(a.exception)
+  self.assertTrue(all(a.checkbox(key='required_sensor_'+str(i)).value for i in range(9)))
+  self.assertTrue(any('Required perch distance sensor' in str(x.value) for x in a.dataframe))
