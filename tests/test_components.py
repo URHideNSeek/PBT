@@ -1,6 +1,6 @@
 import copy,json,unittest
 from pathlib import Path
-from components import SENSORS,sensor_plan,bom,match,constraint,evaluate_product
+from components import SENSORS,REQUIRED_SENSOR_HOSTS,sensor_plan,bom,match,constraint,evaluate_product
 from mission import size
 from sizing import derive
 ROOT=Path(__file__).resolve().parents[1]
@@ -18,7 +18,7 @@ class ComponentTests(unittest.TestCase):
  def test_duty_and_tier2_override(self):
   p=profile('visible');x=sensor_plan(['visible'],['visible'],{'visible':p},.5,360,1)
   self.assertAlmostEqual(x['devices'][0]['active_fraction'],.625)
-  self.assertAlmostEqual(x['tier1_w']+x['tier2_w'],3.)
+  self.assertAlmostEqual(x['tier1_w']+x['tier2_w'],1+p['active_w'])
  def test_unused_tier2_is_idle_but_still_installed(self):
   p=profile('thermal');x=sensor_plan([],['thermal'],{'thermal':p},1,0,1)
   self.assertEqual(x['daily_gb'],0);self.assertEqual(x['sensor_kg'],.05)
@@ -78,13 +78,19 @@ class LockedSensorsUI(unittest.TestCase):
  def test_required_sensors_remain_checked_with_no_mission_payload(self):
   from streamlit.testing.v1 import AppTest
   a=AppTest.from_file(str(ROOT/'app.py')).run(timeout=30)
-  for i in range(9):
-   w=a.checkbox(key='required_sensor_'+str(i))
+  for key in REQUIRED_SENSOR_HOSTS:
+   w=a.checkbox(key='sensor_flight_'+key)
    self.assertTrue(w.value);self.assertTrue(w.disabled)
   for key in SENSORS:
    a.checkbox(key='sensor_t1_'+key).uncheck()
    a.checkbox(key='sensor_t2_'+key).uncheck()
   a.slider(key='mission_tier2').set_value(0).run(timeout=30)
   self.assertFalse(a.exception)
-  self.assertTrue(all(a.checkbox(key='required_sensor_'+str(i)).value for i in range(9)))
+  self.assertTrue(all(a.checkbox(key='sensor_flight_'+key).value for key in REQUIRED_SENSOR_HOSTS))
   self.assertTrue(any('Required perch distance sensor' in str(x.value) for x in a.dataframe))
+
+  before=a.session_state['envelope_result']['settings']['nonbattery_kg']
+  a.checkbox(key='sensor_t1_visible').check().run(timeout=30)
+  self.assertFalse(a.exception)
+  self.assertEqual(a.session_state['envelope_result']['settings']['nonbattery_kg'],before)
+  self.assertGreater(a.session_state['envelope_result']['component_plan']['daily_gb'],0)
