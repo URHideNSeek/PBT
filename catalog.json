@@ -1,0 +1,684 @@
+[
+  {
+    "id": "ark-fpv",
+    "name": "ARK FPV Flight Controller",
+    "categories": [
+      "flight_controller"
+    ],
+    "source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/",
+    "attributes": {
+      "mass_g": 7.5,
+      "voltage_min_v": 5.5,
+      "voltage_max_v": 50.4,
+      "active_w": 2.5,
+      "pwm_outputs": 9,
+      "protocols": [
+        "PX4",
+        "ArduPilot"
+      ],
+      "interfaces": [
+        "UART",
+        "CAN",
+        "SPI",
+        "I2C",
+        "USB"
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Manufacturer declares NDAA and model-specific Blue Framework listing. Operating-temperature evidence still needed. Input operating limit uses 12S full-charge voltage, not absolute maximum.",
+    "ndaa": true,
+    "blue": true,
+    "ndaa_source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/",
+    "blue_source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/"
+  },
+  {
+    "id": "ark-4in1",
+    "name": "ARK 4IN1 ESC (solder variant)",
+    "categories": [
+      "esc"
+    ],
+    "source_url": "https://arkelectron.com/product/ark-4in1-esc/",
+    "attributes": {
+      "mass_g": 14.5,
+      "voltage_min_v": 6.0,
+      "voltage_max_v": 33.6,
+      "channels": 4,
+      "continuous_a_per_channel": 50.0,
+      "peak_a_per_channel": 75.0,
+      "protocols": [
+        "DShot",
+        "PWM"
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "3\u20138S; the 65V absolute maximum is not an operating input rating. Manufacturer declarations require exact revision confirmation.",
+    "ndaa": true,
+    "blue": true,
+    "ndaa_source_url": "https://arkelectron.com/product/ark-4in1-esc/",
+    "blue_source_url": "https://arkelectron.com/product/ark-4in1-esc/"
+  },
+  {
+    "id": "pixhawk-6c-mini",
+    "name": "Holybro Pixhawk 6C Mini",
+    "categories": [
+      "flight_controller"
+    ],
+    "source_url": "https://docs.px4.io/main/en/flight_controller/pixhawk6c_mini",
+    "attributes": {
+      "mass_g": 39.2,
+      "temp_min_c": -40.0,
+      "temp_max_c": 85.0,
+      "protocols": [
+        "PX4",
+        "ArduPilot"
+      ],
+      "pwm_outputs": 8,
+      "interfaces": [
+        "UART",
+        "CAN",
+        "SPI",
+        "I2C",
+        "USB"
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Requires separate regulated power module. Unknown board power and supply limits remain gaps.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "voxl2",
+    "name": "ModalAI VOXL 2 board",
+    "categories": [
+      "compute"
+    ],
+    "source_url": "https://www.modalai.com/products/voxl-2",
+    "attributes": {
+      "mass_g": 16.0,
+      "active_w": 7.0,
+      "ram_gb": 8.0,
+      "interfaces": [
+        "USB",
+        "UART",
+        "CSI"
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Board-only weight; carriers, cooling and I/O modules are extra. Minimum compute benchmark and temperature evidence still needed.",
+    "ndaa": true,
+    "blue": null,
+    "ndaa_source_url": "https://www.modalai.com/products/voxl-2",
+    "blue_source_url": null
+  },
+  {
+    "id": "ark-gps",
+    "name": "ARK GPS M9N",
+    "categories": [
+      "gnss"
+    ],
+    "source_url": "https://arkelectron.com/product/ark-gps/",
+    "attributes": {
+      "voltage_min_v": 5.0,
+      "voltage_max_v": 5.0,
+      "active_w": 0.585,
+      "interface": "CAN",
+      "compass": true
+    },
+    "checked_on": "2026-10-14",
+    "notes": "M9N DroneCAN module. Exact accuracy, installed weight and temperature qualification require vendor data.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "doodle-mini",
+    "name": "Doodle Labs Mini Mesh Rider",
+    "categories": [
+      "radio"
+    ],
+    "source_url": "https://doodlelabs.com/products/radios/mini",
+    "attributes": {
+      "mass_g": 34.0,
+      "active_w": 8.0,
+      "interfaces": [
+        "Ethernet",
+        "USB",
+        "UART"
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Maximum throughput 80 Mbps and advertised 50+ km range are not installed application guarantees. Exact SKU, band, supply, link budget and Framework evidence required.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "tattu16",
+    "name": "Tattu 16000mAh 6S 15C EC5",
+    "categories": [
+      "battery"
+    ],
+    "source_url": "https://genstattu.com/blog/recommend-high-capacity-lipo-battery-for-your-multirotor-uav",
+    "attributes": {
+      "mass_g": 1952.0,
+      "nominal_wh": 355.2,
+      "nominal_voltage_v": 22.2,
+      "voltage_max_v": 25.2,
+      "continuous_a": 240.0,
+      "peak_a": 480.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Source gives 1932g \u00b120g; upper mass used. Temperature and loaded cutoff evidence absent; C-ratings are manufacturer claims, not installed qualification.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "tattu16-30",
+    "name": "Tattu 16000mAh 6S 30C AS150",
+    "categories": [
+      "battery"
+    ],
+    "source_url": "https://genstattu.com/ta-30c-16000-6s1p-as-as150.html",
+    "attributes": {
+      "mass_g": 2020.0,
+      "nominal_wh": 355.2,
+      "nominal_voltage_v": 22.2,
+      "voltage_max_v": 25.2,
+      "continuous_a": 480.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "2000g \u00b120g upper mass; no inferred burst or temperature rating.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "mn4014-330",
+    "name": "T-Motor MN4014 KV330",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://store.tmotor.com/product/mn4014-kv330-motor-navigator-type.html",
+    "attributes": {
+      "mass_g": 171.0,
+      "tested_prop_in": 15.0,
+      "tested_voltage_v": 22.2,
+      "thrust_kgf": 1.92
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Published thrust point uses 15-inch prop, not the 11.5-inch assumption. 750W is a 180-second rating, not continuous; no unsupported RPM/temperature rating entered.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "mn4014-400",
+    "name": "T-Motor MN4014 KV400",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://store.tmotor.com/product/mn4014-kv330-motor-navigator-type.html",
+    "attributes": {
+      "mass_g": 171.0,
+      "tested_prop_in": 15.0,
+      "tested_voltage_v": 22.2,
+      "thrust_kgf": 2.62
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Published test requires 15-inch prop. 900W 180-second rating excluded from continuous-power field.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "apc-1154",
+    "name": "APC 11.5x4 fixed propeller",
+    "categories": [
+      "propeller"
+    ],
+    "source_url": "https://www.apcprop.com/product/11-5x4/",
+    "attributes": {
+      "diameter_in": 11.5,
+      "folding": false
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Fixed prop is a dimensional comparator, not a folding option. Rated hub RPM and matched thrust not inferred.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "ada-sht45",
+    "name": "Adafruit SHT45 breakout 5665",
+    "categories": [
+      "environment"
+    ],
+    "source_url": "https://www.adafruit.com/product/5665",
+    "attributes": {
+      "mass_g": 1.7,
+      "voltage_min_v": 3.3,
+      "voltage_max_v": 5.0,
+      "interface": "I2C",
+      "temp_accuracy_c": 0.1,
+      "humidity_accuracy_pct": 1.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Sensor chip operating range -40 to125 C and 0.4uA average exclude board regulator quiescent draw; do not promote these to whole-board power or qualification.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "ada-bmp390",
+    "name": "Adafruit BMP390 breakout 4816",
+    "categories": [
+      "pressure"
+    ],
+    "source_url": "https://www.adafruit.com/product/4816",
+    "attributes": {
+      "voltage_min_v": 3.0,
+      "voltage_max_v": 5.0,
+      "interface": "I2C",
+      "pressure_min_hpa": 300.0,
+      "pressure_max_hpa": 1250.0,
+      "pressure_accuracy_pa": 50.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Absolute pressure performance from Bosch; whole-board mass/power/temperature absent. Check availability; vendor page currently says out of stock.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "ada-veml",
+    "name": "Adafruit VEML7700 breakout 4162",
+    "categories": [
+      "light"
+    ],
+    "source_url": "https://www.adafruit.com/product/4162",
+    "attributes": {
+      "voltage_min_v": 3.0,
+      "voltage_max_v": 5.0,
+      "interface": "I2C"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Board qualification and maximum current must be obtained; no chip-only power inferred.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "samsung64",
+    "name": "Samsung PRO Endurance 64GB (2022)",
+    "categories": [
+      "storage"
+    ],
+    "source_url": "https://semiconductor.samsung.com/news-events/news/samsung-unveils-new-pro-endurance-memory-card-optimized-for-surveillance-and-dashboard-cameras/",
+    "attributes": {
+      "mass_g": 0.25,
+      "temp_min_c": -25.0,
+      "temp_max_c": 85.0,
+      "capacity_gb": 63.988,
+      "write_mbps": 80.0,
+      "interface": "microSD"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "V10 minimum sustained 10MB/s used, not headline maximum. Host adapter/file-system and flash endurance remain integration checks.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "samsung128",
+    "name": "Samsung PRO Endurance 128GB (2022)",
+    "categories": [
+      "storage"
+    ],
+    "source_url": "https://semiconductor.samsung.com/news-events/news/samsung-unveils-new-pro-endurance-memory-card-optimized-for-surveillance-and-dashboard-cameras/",
+    "attributes": {
+      "mass_g": 0.25,
+      "temp_min_c": -25.0,
+      "temp_max_c": 85.0,
+      "capacity_gb": 128.01,
+      "write_mbps": 240.0,
+      "interface": "microSD"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "V30 minimum 30MB/s; adapter/controller compatibility required.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "samsung256",
+    "name": "Samsung PRO Endurance 256GB (2022)",
+    "categories": [
+      "storage"
+    ],
+    "source_url": "https://semiconductor.samsung.com/news-events/news/samsung-unveils-new-pro-endurance-memory-card-optimized-for-surveillance-and-dashboard-cameras/",
+    "attributes": {
+      "mass_g": 0.25,
+      "temp_min_c": -25.0,
+      "temp_max_c": 85.0,
+      "capacity_gb": 256.02,
+      "write_mbps": 240.0,
+      "interface": "microSD"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "V30 minimum 30MB/s; NDAA and exact-model Blue evidence not established.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "camera3",
+    "name": "Raspberry Pi Camera Module 3",
+    "categories": [
+      "visible"
+    ],
+    "source_url": "https://www.raspberrypi.com/documentation/accessories/camera.html",
+    "attributes": {
+      "mass_g": 4.0,
+      "interface": "CSI",
+      "pixels_x": 1920,
+      "pixels_y": 1080,
+      "fps": 50.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "CSI camera; not a USB drop-in. Power and operating-temperature evidence missing.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "lepton35",
+    "name": "FLIR Lepton 3.5 500-0771-01",
+    "categories": [
+      "thermal"
+    ],
+    "source_url": "https://oem.flir.com/products/lepton/?model=500-0771-01",
+    "attributes": {
+      "pixels_x": 160,
+      "pixels_y": 120,
+      "interface": "SPI"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Requires power rails and interface/carrier electronics. Fails default 640x480 thermal resolution.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "tfmini",
+    "name": "Benewake TFmini-S",
+    "categories": [
+      "range"
+    ],
+    "source_url": "https://en.benewake.com/uploadfiles/2024/04/20240426140025367.pdf",
+    "attributes": {
+      "mass_g": 5.3,
+      "voltage_min_v": 4.9,
+      "voltage_max_v": 5.1,
+      "active_w": 0.7,
+      "interface": "UART",
+      "range_m": 12.0,
+      "range_accuracy_cm": 12.0,
+      "sample_hz": 100.0
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Upper mass tolerance used; accuracy at 12m uses 1% rather than the 6cm short-range figure. Sleep/temperature evidence missing.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "hackrf",
+    "name": "Great Scott Gadgets HackRF One",
+    "categories": [
+      "rf"
+    ],
+    "source_url": "https://greatscottgadgets.com/hackrf/one/",
+    "attributes": {
+      "rf_min_mhz": 1.0,
+      "rf_max_mhz": 6000.0,
+      "rf_bandwidth_mhz": 20.0,
+      "interface": "USB",
+      "coherent_channels": 1
+    },
+    "checked_on": "2026-10-14",
+    "notes": "RF monitor peripheral, not certified passive-radar package. Antennas, host compute, channel coherence and power/mass data require evidence.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "pluto",
+    "name": "Analog Devices ADALM-PLUTO",
+    "categories": [
+      "rf",
+      "radar"
+    ],
+    "source_url": "https://wiki.analog.com/university/tools/pluto",
+    "attributes": {
+      "rf_min_mhz": 325.0,
+      "rf_max_mhz": 3800.0,
+      "rf_bandwidth_mhz": 20.0,
+      "coherent_channels": 1,
+      "interface": "USB"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Official single-RX channel; cannot infer two coherent RX channels or 6GHz coverage from unofficial modifications.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "eg25",
+    "name": "Quectel EG25-G Mini PCIe",
+    "categories": [
+      "cellular"
+    ],
+    "source_url": "https://www.quectel.com/product/lte-eg25-g-mpcie/",
+    "attributes": {
+      "interface": "USB"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Module needs carrier, supply and regional carrier approval; headline Cat4 link speeds are not guaranteed application rate.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "pololu",
+    "name": "Pololu D24V90F5 regulator",
+    "categories": [
+      "power"
+    ],
+    "source_url": "https://www.pololu.com/product/2866/specs",
+    "attributes": {
+      "voltage_max_v": 38.0,
+      "output_power_w": 45.0,
+      "output_rails_v": [
+        5.0
+      ]
+    },
+    "checked_on": "2026-10-14",
+    "notes": "5V only; does not supply default 6V actuator rail. Thermal/current derating and distribution/protection are separate.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "savox",
+    "name": "Savox SH-0255MG",
+    "categories": [
+      "actuator"
+    ],
+    "source_url": "https://www.savoxusa.com/products/savsh0255mg-micro-digital-mg-servo-13-54",
+    "attributes": {
+      "mass_g": 15.8
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Vendor model source; sustained torque, supply and temperature must be verified before qualification.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "volz",
+    "name": "Volz DA 15-N",
+    "categories": [
+      "actuator"
+    ],
+    "source_url": "https://www.volz-servos.com/actuators/detail/da-15-n/",
+    "attributes": {
+      "torque_kgcm": 1.6315459407646855
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Rated 0.16Nm converted to kgf cm, not peak torque. Revision-specific source needed for remaining requirements.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "respeaker",
+    "name": "Seeed reSpeaker Lite",
+    "categories": [
+      "acoustic"
+    ],
+    "source_url": "https://wiki.seeedstudio.com/reSpeaker_usb_v3/",
+    "attributes": {
+      "interface": "USB",
+      "channels": 2
+    },
+    "checked_on": "2026-10-14",
+    "notes": "USB firmware/configuration and whole-board power, bandwidth/SNR and mass require confirmation.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "adxl345",
+    "name": "SparkFun ADXL345 breakout",
+    "categories": [
+      "vibration"
+    ],
+    "source_url": "https://www.sparkfun.com/sparkfun-triple-axis-accelerometer-breakout-adxl345.html",
+    "attributes": {
+      "accel_range_g": 16.0,
+      "interface": "SPI"
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Chip-only ratings are not copied to assembled board temperature/power limits.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "rpx-embir",
+    "name": "RPX EmbIR UAV-640-1-68-13-A",
+    "categories": [
+      "thermal"
+    ],
+    "source_url": "https://www.rpxtech.com/thermal-cores.html",
+    "attributes": {
+      "pixels_x": 640,
+      "pixels_y": 480
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Exact lens, frame rate, power, voltage, operating temperature and interface need a model-specific datasheet; do not infer compliance from a different EmbIR generation.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "powerfilm-sp3",
+    "name": "PowerFilm SP3-37 solar module",
+    "categories": [
+      "solar"
+    ],
+    "source_url": "https://www.powerfilmsolar.com/products/electronic-component-solar-panels/classic-application-series/sp3-37",
+    "attributes": {},
+    "checked_on": "2026-10-14",
+    "notes": "A module requires array packing/interconnects; no claim of installed 15.5-inch solar output or daily harvest.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "genasun-gv5",
+    "name": "Genasun GV-5 Lithium Custom Voltage MPPT",
+    "categories": [
+      "charger"
+    ],
+    "source_url": "https://genasun.eu/products/genasun-gv-5-lithium-custom-voltage-mppt",
+    "attributes": {
+      "mppt": true
+    },
+    "checked_on": "2026-10-14",
+    "notes": "Exact battery voltage variant, input voltage/power, mass and temperature must be verified.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "taoglas-tg09",
+    "name": "Taoglas TG.09.0113W cellular antenna",
+    "categories": [
+      "antenna_set"
+    ],
+    "source_url": "https://www.taoglas.com/product/tg-09-2g3g-cellular-white-connector-mount-monopole-antenna/",
+    "attributes": {},
+    "checked_on": "2026-10-14",
+    "notes": "Single cellular antenna is not a complete terrestrial + cellular + satellite antenna set.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "rockblock9603",
+    "name": "Ground Control RockBLOCK 9603",
+    "categories": [
+      "satcom"
+    ],
+    "source_url": "https://docs.groundcontrol.com/iot/rockblock/product-variants",
+    "attributes": {},
+    "checked_on": "2026-10-14",
+    "notes": "Short-burst messaging peripheral, not a broadband satcom terminal; no inferred application throughput.",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  }
+]
