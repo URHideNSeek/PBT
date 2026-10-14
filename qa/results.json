@@ -1,0 +1,48 @@
+{
+  "coverage": {
+    "single-input grid": {
+      "cases": 66310,
+      "accepted": 65253,
+      "rejected": 1057,
+      "feasible": 31995
+    },
+    "2-input representative combinations": {
+      "cases": 2079,
+      "accepted": 1778,
+      "rejected": 301,
+      "feasible": 442
+    },
+    "3-input representative combinations": {
+      "cases": 41580,
+      "accepted": 32945,
+      "rejected": 8635,
+      "feasible": 9468
+    },
+    "7-control endpoint corners": {
+      "cases": 128,
+      "accepted": 64,
+      "rejected": 64,
+      "feasible": 16
+    },
+    "22-input seeded configurations": {
+      "cases": 10000,
+      "accepted": 2717,
+      "rejected": 7283,
+      "feasible": 102
+    },
+    "detailed model boundaries": {
+      "cases": 184,
+      "accepted": 180,
+      "rejected": 4
+    }
+  },
+  "failures": [],
+  "elapsed_seconds": 7.57,
+  "seed": 1729,
+  "limits": [
+    "Single-input grid covers every slider tick and integer increment for bounded numeric inputs; bounded numeric controls use their declared increments; typed off-grid decimals and unbounded fields cannot be exhausted.",
+    "Pairs/triples cover all parameter subsets at minimum/default/maximum representative levels, not every Cartesian tick.",
+    "Full configurations cover seven-control endpoint corners and 10,000 seeded 22-input configurations.",
+    "This checks model mathematics and software behavior; physical models remain preliminary."
+  ]
+}
