@@ -2,8 +2,8 @@ import json
 import pandas as pd
 import streamlit as st
 from model import F, DEFAULTS, MASS, validate, evaluate
-st.set_page_config(page_title='Pigeon Bot Trade Engine',page_icon='🕊️',layout='wide')
-st.title('Pigeon Bot · Trade Engine')
+st.set_page_config(page_title='Platform Trade Engine',page_icon='📊',layout='wide')
+st.title('Platform · Trade Engine')
 st.caption('Aircraft + unattended perched sensor · performance sizing before parts selection')
 st.info('All defaults are assumptions. PASS means preliminary model closure; packaging, perch strength, motor/ESC limits and sensor effectiveness remain unmodeled.')
 if 'scenarios' not in st.session_state: st.session_state.scenarios=[]
@@ -55,7 +55,7 @@ with tabs[1]:
  if st.button('Save to comparison matrix'):
   st.session_state.scenarios=[s for s in st.session_state.scenarios if s['name']!=name]+[current]
  st.caption('Same-name saves replace the existing row. Download JSON to preserve session-local scenarios.')
- st.download_button('Download current scenario JSON',json.dumps(current,indent=2),file_name='pigeon_scenario.json')
+ st.download_button('Download current scenario JSON',json.dumps(current,indent=2),file_name='scenario.json')
  rows=[]
  for s in st.session_state.scenarios:
   q=evaluate(s['parameters'])
@@ -63,7 +63,7 @@ with tabs[1]:
  if rows:
   frame=pd.DataFrame(rows).set_index('Scenario'); st.dataframe(frame.T,width='stretch')
   st.download_button('Download matrix CSV',frame.to_csv(),file_name='trade_matrix.csv')
-  st.download_button('Download scenario bundle',json.dumps(st.session_state.scenarios,indent=2),file_name='pigeon_scenarios.json')
+  st.download_button('Download scenario bundle',json.dumps(st.session_state.scenarios,indent=2),file_name='scenarios.json')
   if st.button('Clear matrix'): st.session_state.scenarios=[]; st.rerun()
  else: st.info('Save multiple designs to compare them here.')
 with tabs[2]:
