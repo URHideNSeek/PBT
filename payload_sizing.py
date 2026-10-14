@@ -10,11 +10,14 @@ def size_payload(payload_kg,range_mi,hours,*,hardware_kg,sensor_kg=0.,**engineer
  maximum=(engineering.get('mass_max',DEFAULTS['mass_max'])*.45359237-hardware_kg-payload_kg)*.999999
  if maximum<=0:return None
  def candidate(battery,full=False):
+  inputs=engineering.copy()
+  if not full:inputs.update(manage_sleep=False,tier1_w=0.,tier2_w=0.,comms_w=0.,wake_wh=1.,good_wh=0.,bad_wh=0.,checkins=0,events_day=0)
+  else:inputs.setdefault('manage_sleep',True)
   gross=hardware_kg+payload_kg+battery
-  try:r=size(mass_lb=gross/.45359237,range_mi=range_mi,days=hours/24,battery_fraction=battery/gross,sensor_kg=payload_kg,reposition_mi=range_mi,calculate_recharge=full,**engineering)
+  try:r=size(mass_lb=gross/.45359237,range_mi=range_mi,days=hours/24 if full else 1./24,battery_fraction=battery/gross,sensor_kg=payload_kg,reposition_mi=range_mi,calculate_recharge=full,**inputs)
   except ValueError:return None
   p=r['engineering']
-  if not (r['mission_energy_feasible'] and p['prop']<p['prop_max'] and p['solar']<p['solar_max'] and r['thrust_per_rotor_kgf']<=p['thrust'] and max(r['hover_w'],r['flight_w'])<=battery*p['wkg'] and r['peak_w']<=battery*p['peak_wkg']):return None
+  if not ((r['insertion_energy_feasible'] and (full or r['mission_energy_feasible'])) and p['prop']<p['prop_max'] and p['solar']<p['solar_max'] and r['thrust_per_rotor_kgf']<=p['thrust'] and max(r['hover_w'],r['flight_w'])<=battery*p['wkg'] and r['peak_w']<=battery*p['peak_wkg']):return None
   r['additional_payload_kg']=max(0.,payload_kg-sensor_kg)
   return {'Range per leg (mi)':range_mi,'Payload mass (lb)':payload_kg/.45359237,'Additional payload (kg)':r['additional_payload_kg'],'Battery fraction':battery/gross,'result':r}
  previous=.001
