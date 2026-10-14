@@ -58,30 +58,38 @@ with mission_tab:
  env_good,env_check,env_t2,env_deadline=good,checkins,tier2,deadline
  st.caption('Remaining mass is allocated to battery after reserving 4.35 kg for nonbattery equipment. Curves are conditional model estimates.')
  calculate_envelope=st.button('Calculate mass envelope')
- envelope_inputs=(good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
+ envelope_inputs=(hours,good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs:
   st.session_state['envelope_inputs']=envelope_inputs
   from envelope import curve
   lines={}
-  for target_h in [1,6,24,72]:
+  for target_h in dict.fromkeys([1,6,24,72,hours]):
    points=curve(target_h,max_range=10.,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
    lines[f'{target_h} hours on target']=[x['Max range per leg mi'] for x in points]
+  lines[f'{hours:g} hours selected']=lines[f'{hours:g} hours on target'] if f'{hours:g} hours on target' in lines else lines.pop(f'{hours} hours on target')
   frame=pd.DataFrame(lines,index=[x['Mass lb'] for x in points]);frame.index.name='Flight-ready mass (lb)'
-  st.session_state['envelope_result']={'frame':frame,'settings':{'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline},'model_inputs':dict(good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
+  st.session_state['envelope_result']={'frame':frame,'settings':{'selected_hours':hours,'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline},'model_inputs':dict(good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
  if 'envelope_result' in st.session_state:
   saved=st.session_state['envelope_result']
-  order=['1 hours on target','6 hours on target','24 hours on target','72 hours on target']
+  order=['1 hours on target','6 hours on target','24 hours on target','72 hours on target',f'{hours:g} hours selected']
   chart_data=saved['frame'].reset_index().melt(id_vars='Flight-ready mass (lb)',var_name='Time on target',value_name='Range per leg (mi)')
   st.vega_lite_chart(chart_data,{
    'mark':{'type':'line'},
    'encoding':{
     'x':{'field':'Flight-ready mass (lb)','type':'quantitative'},
     'y':{'field':'Range per leg (mi)','type':'quantitative','title':'Maximum range per leg (statute miles)'},
-    'color':{'field':'Time on target','type':'nominal','sort':order,'scale':{'domain':order},'legend':{'orient':'bottom','direction':'horizontal','columns':2,'title':None,'labelLimit':250,'symbolLimit':4,'offset':16}},
+    'color':{'field':'Time on target','type':'nominal','sort':order,'scale':{'domain':order},'legend':{'orient':'bottom','direction':'horizontal','columns':2,'title':None,'labelLimit':250,'symbolLimit':5,'offset':16}},
+    'strokeWidth':{'condition':{'test':"indexof(datum['Time on target'], 'selected') >= 0",'value':4},'value':2},
+    'strokeDash':{'condition':{'test':"indexof(datum['Time on target'], 'selected') >= 0",'value':[7,3]},'value':[1,0]},
     'order':{'field':'Flight-ready mass (lb)','type':'quantitative'}},
    'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}
   },width='stretch')
   st.caption('Envelope updates when mission or engineering inputs change. Each curve is a conditional boundary; lower range down to 0.5 mile is energy-feasible under those assumptions. Missing points are infeasible. Range is capped at the 10-mile search limit.')
+  st.caption('The thick dashed curve follows Time on target; the four reference curves keep their fixed durations.')
+  harvest=(good*good_wh+(100-good)*bad_wh)/100
+  daily_station=t1*24+t2*tier2/60+radio*(checkins*duration+events*event_duration)/60
+  st.dataframe(pd.DataFrame([{'Time on target (hours)':h,'Gross solar harvest (Wh)':harvest*h/24,'Station sensing/comms (Wh)':daily_station*h/24,'Net station balance (Wh)':(harvest-daily_station)*h/24} for h in dict.fromkeys([1,6,24,72,hours])]),hide_index=True,width='stretch')
+  st.caption('Solar is battery-delivered harvest prorated by duration. Net balance subtracts ongoing loads; a negative balance drains the battery. Flight and the one-time sleep report are separate. Harvest above battery capacity is discarded in the energy calculation. This average-day model does not model night or sequences of cloudy days.')
   st.json(saved['settings'],expanded=False)
   st.download_button('Download envelope CSV',saved['frame'].to_csv(),file_name='mass_envelope.csv')
 try:
@@ -137,7 +145,7 @@ with sizing_tab:
   point_mass=st.selectbox('Envelope mass (lb)',candidates)
   point_range=float(envelope['frame'].loc[point_mass,series])
   battery_fraction=(point_mass*.45359237-4.35)/(point_mass*.45359237)
-  target=size(mass_lb=point_mass,range_mi=point_range,days=int(series.split()[0])/24,battery_fraction=battery_fraction,**envelope['model_inputs'])
+  target=size(mass_lb=point_mass,range_mi=point_range,days=float(series.split()[0])/24,battery_fraction=battery_fraction,**envelope['model_inputs'])
   st.caption(f'Sizing at the last calculated envelope boundary: {point_mass:g} lb, {point_range:.2f} miles per leg, {series}. Uses the frozen envelope assumptions.')
  try: calculated=derive(target,thrust_coefficient=ct,nominal_voltage=nominal_v)
  except ValueError as e: st.error(str(e)); st.stop()
