@@ -32,10 +32,20 @@ with st.sidebar:
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
 mission_tab,sizing_tab,bom_tab=st.tabs(['Mission & Envelope','Engineering Sizing','BOM Options'])
-from components import SENSORS, sensor_plan, bom, match
+from components import SENSORS, sensor_plan, bom, match, REQUIRED_FLIGHT_PERCH_SENSORS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
 from pathlib import Path
 with sizing_tab:
- st.subheader('Sensor configuration')
+ st.subheader('Required flight and perching sensors')
+ st.caption('Fixed hardware for the selected navigation/perching architecture. Flight and Emplace activation is independent of Tier 1/Tier 2 stationary sensing minutes. Integrated sensors are counted in their host component, not added again.')
+ with st.container(border=True):
+  sensor_col,required_col=st.columns([5,1])
+  sensor_col.markdown('**Sensor / installation**');required_col.markdown('**Required**')
+  for required_index,(required_name,required_host) in enumerate(REQUIRED_FLIGHT_PERCH_SENSORS):
+   sensor_col,required_col=st.columns([5,1],vertical_alignment='center')
+   sensor_col.write(required_name+' · '+required_host)
+   required_col.checkbox(required_name+' required',value=True,disabled=True,key='required_sensor_'+str(required_index),label_visibility='collapsed')
+ st.subheader('Optional mission sensor configuration')
+ st.caption('These are additional mission devices. Deselecting them does not remove the required flight/perch sensors above.')
  st.caption('Tier 1 follows the selected duty cycle. Tier 2 follows Mission & Envelope active minutes/day. Each selected device is allocated once.')
  tier1_keys=[];tier2_keys=[]
  with st.container(border=True):
@@ -141,10 +151,10 @@ with sizing_tab:
 settings=dict(temp_min_c=temp_low,temp_max_c=temp_high,structure_g=structure_g,wires_g=wires_g,fasteners_g=fasteners_g,sealants_g=sealants_g,growth_g=growth_g,regulator_g=regulator_g,navigation_g=navigation_g,servo_qty=servo_qty,servo_g=servo_g,servo_torque_kgcm=servo_torque,servo_v=servo_v,bus_max_v=bus_max,current_margin=current_margin,compute_w=compute_w,autopilot_w=autopilot_w,ram_gb=ram_gb,retention_days=retention_days,gnss_accuracy_m=gnss_accuracy,radio_w=radio,radio_supply_v=radio_supply,link_range_km=distance*1.609344,link_mbps=link_mbps,frequency_mhz=frequency)
 try:
  if bus_max<nominal_v:raise ValueError('Maximum bus voltage must not be below nominal battery voltage.')
- plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,housekeeping_extra+compute_w+autopilot_w+1.5)
+ plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,housekeeping_extra+compute_w+autopilot_w+1.5+FIXED_PERCH_SENSOR_SLEEP_W)
 except ValueError as e:st.error(str(e));st.stop()
 t1,t2=plan['tier1_w'],plan['tier2_w']
-installation_kg=(structure_g+wires_g+fasteners_g+sealants_g+growth_g+regulator_g+navigation_g+servo_qty*servo_g)/1000
+installation_kg=(structure_g+wires_g+fasteners_g+sealants_g+growth_g+regulator_g+navigation_g+servo_qty*servo_g+FIXED_PERCH_SENSOR_G)/1000
 fixed_nonbattery=installation_kg+1.05+.22+.87+.25+plan['sensor_kg']
 component_inputs=dict(sensor_kg=plan['sensor_kg'],minimum_other_kg=installation_kg)
 with sizing_tab:
