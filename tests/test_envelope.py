@@ -12,14 +12,15 @@ class EnvelopeTests(unittest.TestCase):
   self.assertTrue(size(mass_lb=m,range_mi=rng,days=.25,battery_fraction=fraction,good_pct=100,checkins=1,tier2_min_day=1)['mission_energy_feasible'])
   self.assertFalse(size(mass_lb=m,range_mi=rng+.001,days=.25,battery_fraction=fraction,good_pct=100,checkins=1,tier2_min_day=1)['mission_energy_feasible'])
 class EnvelopeUI(unittest.TestCase):
- def test_calculate_and_store_chart(self):
+ def test_payload_chart_and_thirty_day_selector(self):
   from pathlib import Path
   from streamlit.testing.v1 import AppTest
-  a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=20)
-  next(b for b in a.button if b.label=='Calculate mass envelope').click().run(timeout=20)
-  self.assertEqual(len(a.exception),0)
-  a.number_input(key='mission_hours').set_value(6.).run(timeout=20)
-  self.assertEqual(list(a.session_state['envelope_result']['frame'].columns),['1 hours on target','6 hours on target','24 hours on target','72 hours on target'])
-  a.number_input(key='mission_hours').set_value(12.).run(timeout=20)
-  self.assertEqual(list(a.session_state['envelope_result']['frame'].columns),['1 hours on target','12 hours on target','24 hours on target','72 hours on target'])
-  self.assertEqual(len(a.exception),0)
+  a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=30)
+  self.assertFalse(a.exception)
+  self.assertEqual(a.session_state['envelope_result']['kind'],'payload')
+  self.assertIn('Payload mass (lb)',a.session_state['envelope_result']['frame'])
+  self.assertFalse(any('Desired recharge' in w.label for w in a.number_input))
+  a.slider(key='mission_hours').set_value(720.).run(timeout=30)
+  self.assertFalse(a.exception)
+  self.assertEqual(a.session_state['envelope_result']['settings']['selected_hours'],720)
+  self.assertEqual(a.slider(key='mission_hours').max,720.)
