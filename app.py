@@ -6,8 +6,8 @@ from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POIN
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_mass':5.44310844,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
-PRESET_VERSION='least-mass-metric-v3'
+STARTUP_PRESET={'mission_mass':2.72155422,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+PRESET_VERSION='metric-six-lb-v4'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
  st.session_state.pop('envelope_result',None)
@@ -18,10 +18,10 @@ if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
 with st.sidebar:
  st.header('Platform & mission')
  st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
- st.caption('Starting preset: 5.443 kg (12 lb) · 0.805 km (0.5 mi) per leg · 1 hour on target.')
- mass_kg=st.slider('Flight-ready mass, including payload (kg)',3.6,9.1,step=.05,key='mission_mass',format='%.3f')
+ st.caption('Starting preset: 2.722 kg (6 lb) · 0.805 km (0.5 mi) per leg · 1 hour on target.')
+ mass_kg=st.slider('Flight-ready mass, including payload (kg)',0.,2.72155422,step=.05,key='mission_mass',format='%.3f')
  mass=mass_kg/.45359237
- st.caption(f'{mass_kg:.3f} kg / {mass:.2f} lb · limits 3.6–9.1 kg / 7.94–20.06 lb')
+ st.caption(f'{mass_kg:.3f} kg / {mass:.2f} lb · limits 0–2.722 kg / 0–6 lb')
  distance_km=st.slider('Range per leg (km)',0.,16.1,step=.1,key='mission_range',format='%.3f')
  distance=distance_km/1.609344
  st.caption(f'{distance_km:.3f} km / {distance:.2f} mi · limits 0–16.1 km / 0–10.00 mi')
