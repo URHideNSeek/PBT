@@ -1,5 +1,7 @@
 """Preliminary coupled sizing; defaults are assumptions, not verified performance."""
 from math import pi,sqrt,cos,radians,isfinite
+from flight import power
+from perched import simulate,timeline
 # label, default, min, max, section
 F={
 'battery_kg':('Installed battery kg',4.5,.1,10.,'Mass'),
@@ -20,7 +22,10 @@ F={
 'prop':('Assembled prop diameter in',11.5,3.,24.,'Flight'),
 'rotors':('Rotor count',4.,2.,12.,'Flight'),
 'rho':('Air density kg/m³',1.225,.5,1.5,'Flight'),
-'eff':('Hover ideal-to-electrical efficiency',.6,.1,.9,'Flight'),
+'eff':('Induced-power electrical efficiency assumption',.6,.1,.9,'Flight'),
+'flight_electronics_w':('Active flight electronics W',6.,0.,200.,'Flight'),
+'profile_fraction':('Reference hover profile-power fraction',.15,.01,.5,'Flight'),
+'tip_speed_m_s':('Reference rotor tip speed m/s',180.,50.,300.,'Flight'),
 'thrust':('Continuous thrust per rotor at scenario conditions kgf',3.5,.1,10.,'Flight'),
 'ratio':('Required thrust-to-weight ratio',1.5,1.,3.,'Flight'),
 'ref_w':('Reference cruise propulsion power W',1800.,100.,6000.,'Flight'),
@@ -76,9 +81,7 @@ def validate(p):
 def evaluate(p):
  validate(p)
  m=sum(p[k] for k in MASS); area=p['rotors']*pi*(p['prop']*.0254/2)**2
- hover=(m*9.80665)**1.5/sqrt(2*p['rho']*area)/p['eff']
- drag=lambda kt:.5*p['rho']*p['drag']*(kt*.514444)**3/p['drive_eff']
- flight=max(0.,p['ref_w']-drag(p['ref_speed']))*(m/p['ref_kg'])**1.5*p['ref_prop']/p['prop']+drag(p['speed'])
+ flight_parts=power(m,p);hover=flight_parts['hover_w'];flight=flight_parts['flight_w']
  head=p['wind']*cos(radians(p['angle'])); cross2=max(0.,p['wind']**2-head**2)
  along=sqrt(max(0.,p['speed']**2-cross2)); go=along-head; back=along+head
  possible=cross2<p['speed']**2 and min(go,back)>0
@@ -94,15 +97,15 @@ def evaluate(p):
   insertion=flight*out_h+aux/2; retrieval=flight*back_h+aux/2
   energy=start-insertion; minimum=energy; protected=floor+retrieval+p['reserve']
   trace=[{'Station hour':0.,'Battery Wh':energy,'Recovery protected Wh':protected}]
-  steps=max(1,int(p['hours']*12+.999999)); dt=p['hours']/steps
-  for i in range(steps):
-   hour=(p['arrival']+(i+.5)*dt)%24
-   incoming=daily/12*dt if 6<=hour<18 else 0.; harvest+=incoming
-   next_energy=energy+incoming-load*dt-(extra*dt/p['hours'] if p['hours'] else 0.)
-   spill+=max(0.,next_energy-capacity); energy=min(capacity,next_energy); minimum=min(minimum,energy)
-   trace.append({'Station hour':(i+1)*dt,'Battery Wh':energy,'Recovery protected Wh':protected})
+  load_day=load*24+(extra/p['hours']*24 if p['hours'] else 0.)
+  station_result=simulate(energy,capacity,p['hours'],p['arrival'],load_day,daily,protected=protected)
+  total,maximum,_,_,_,rows=timeline(p['hours'],p['arrival'],load_day,daily,100.,1.)
+  for t,cum,peak_cum in rows:
+   value=energy+cum-max(0.,energy+peak_cum-capacity)
+   trace.append({'Station hour':t,'Battery Wh':value,'Recovery protected Wh':protected})
+  energy=station_result['end_wh'];minimum=station_result['minimum_wh'];harvest=station_result['harvest_wh'];spill=station_result['spilled_wh']
   margin=energy-retrieval-floor-p['reserve']; mission=flight*(out_h+back_h)+aux+station+p['reserve']
- required=m*p['ratio']/p['rotors']; peak_w=hover*p['ratio']**1.5
+ required=m*p['ratio']/p['rotors']; peak_w=(hover-p.get('flight_electronics_w',0.))*p['ratio']**1.5+p.get('flight_electronics_w',0.)
  transfer=p['mb']*8000/p['kbps']/60
  temp=p['ambient']+p['thermal_r']*(p['base_w']+p['t1_w']+p['t2_w']+p['radio_w']+p['sun_heat'])
  checks={'Mass':m*2.2046226218<p['mass_max'],'Prop diameter':p['prop']<p['prop_max'],'Solar diameter':p['solar']<p['solar_max'],'Route wind':possible,'Continuous thrust':p['thrust']>=required,'Continuous battery power':p['battery_kg']*p['wkg']>=max(hover,flight),'Peak battery power':p['battery_kg']*p['peak_wkg']>=peak_w,'Mission energy':possible and margin>=0,'Station SOC floor':possible and minimum>=floor,'Transfer deadline':transfer<=p['radio_min'],'Storage':p['data_rate']*p['hours']<=p['storage']*1000,'Peak station thermal':temp<=p['temp_max']}
