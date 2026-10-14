@@ -1,8 +1,8 @@
-"""Conditional mass/range envelope; all mission activities remain positive."""
+"""Conditional mass/range envelope; mission activities follow the selected schedule."""
 from mission import size
 
 def maximum_range(mass_lb, hours, *, nonbattery_kg=4.35, good_pct=100.,checkins=1,tier2_min_day=1.,min_range=.5,max_range=15.,recharge_limit_h=1.,**engineering):
- if min(hours,good_pct,checkins,tier2_min_day,min_range,recharge_limit_h)<=0: raise ValueError('Envelope mission selections must be nonzero')
+ if min(hours,min_range)<=0 or min(good_pct,checkins,tier2_min_day,recharge_limit_h)<0: raise ValueError('Invalid envelope mission selections')
  if max_range<min_range or nonbattery_kg<=0: raise ValueError('Invalid envelope bounds')
  mass_kg=mass_lb*.45359237
  fraction=(mass_kg-nonbattery_kg)/mass_kg
