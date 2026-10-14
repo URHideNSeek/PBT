@@ -29,7 +29,7 @@ SENSORS={
  'imu':('IMU — accelerometer / gyroscope',0.,0.,0.,.006,'UART'),
  'compass':('Magnetometer / compass',0.,0.,0.,.001,'UART'),
  'pressure':('Barometer',0.,0.,0.,.00001,'UART'),
- 'gnss':('Flight GNSS receiver',0.,0.,0.,.001,'CAN'),
+ 'gnss':('Flight GNSS receiver',0.,1.5,0.,.001,'CAN'),
  'visible':('Navigation / perch camera',0.,1.5,.02,2.,'USB'),
  'range':('Perch distance sensor',0.,.5,.01,.002,'UART'),
  'contact':('Perch contact sensor',0.,.01,.005,.00001,'GPIO'),
@@ -64,6 +64,31 @@ def sensor_plan(tier1,tier2,profiles,duty,tier2_min_day,base_w):
   gb=q*p['logged_mbps']*86400/8000*active_fraction;daily_gb+=gb
   devices.append({'key':key,'name':SENSORS[key][0],'required_flight_perch':key in REQUIRED_SENSOR_HOSTS,**p,'tier1':in1,'tier2':in2,'active_fraction':active_fraction,'daily_gb':gb})
  return {'devices':devices,'sensor_kg':mass/1000,'tier1_w':baseline,'tier2_w':increment,'daily_gb':daily_gb,'tier1_duty':duty,'tier2_min_day':tier2_min_day,'base_w':base_w,'status':'Provisional sensor allocations'}
+
+def operating_power(plan,*,housekeeping_w=1.,compute_active_w=3.,compute_sleep_w=.05,flight_sleep_w=.02,gnss_sleep_w=.01,radio_active_w=60.,radio_sleep_w=.02):
+ """Disjoint accounting: baseline + Tier2 minutes + communications minutes.
+ Heavy Tier1 sensors keep payload compute awake at Tier1 duty. Otherwise it
+ wakes for Tier2/communications; their overlapping compute window is modeled
+ independently to avoid charging the same processor twice.
+ """
+ vals=[housekeeping_w,compute_active_w,compute_sleep_w,flight_sleep_w,gnss_sleep_w,radio_active_w,radio_sleep_w]
+ if any(not isfinite(x) or x<0 for x in vals):raise ValueError('Invalid operating-state power')
+ if compute_sleep_w>compute_active_w or radio_sleep_w>radio_active_w:raise ValueError('Sleep power cannot exceed active power')
+ heavy={'visible','thermal','rf','radar'}
+ busy=plan['tier1_duty'] if any(d['tier1'] and d['key'] in heavy for d in plan['devices']) else 0.
+ computer_base=compute_sleep_w+(compute_active_w-compute_sleep_w)*busy
+ tier2_compute=(compute_active_w-computer_base) if any(d['tier2'] for d in plan['devices']) else 0.
+ t2_fraction=plan['tier2_min_day']/1440 if tier2_compute else 0.
+ comms_compute=(compute_active_w-computer_base)*(1-t2_fraction)
+ base=housekeeping_w+computer_base+flight_sleep_w+gnss_sleep_w+radio_sleep_w
+ return {'tier1_w':plan['tier1_w']-plan['base_w']+base,
+         'tier2_w':plan['tier2_w']+tier2_compute,
+         'comms_increment_w':radio_active_w-radio_sleep_w+comms_compute,
+         'computer_baseline_w':computer_base,'tier2_compute_increment_w':tier2_compute,
+         'comms_compute_increment_w':comms_compute,'radio_sleep_w':radio_sleep_w,
+         'housekeeping_w':housekeeping_w,'flight_sleep_w':flight_sleep_w,'gnss_sleep_w':gnss_sleep_w,
+         'compute_active_w':compute_active_w,'compute_sleep_w':compute_sleep_w,
+         'radio_active_w':radio_active_w,'assumption':'Independent overlapping Tier2/communications compute wake windows; low-power sensor polling available while flight control sleeps'}
 
 def constraint(op,value):return {'op':op,'value':value}
 
@@ -104,8 +129,10 @@ def bom(result,sizing,plan,settings):
   'interfaces':constraint('contains_all',['UART','CAN']),
   'accelerometer':constraint('==',True),'gyroscope':constraint('==',True),'barometer':constraint('==',True)})
  interfaces=sorted(set(['UART','USB']+[d['interface'] for d in plan['devices'] if d['key'] not in REQUIRED_SENSOR_HOSTS]))
- add('CMP','Payload computer','compute',1,comp_g*.65,{**rail(5.),'active_w':constraint('<=',settings['compute_w']),
+ add('CMP','Payload computer','compute',1,comp_g*.55,{**rail(5.),'active_w':constraint('<=',settings['compute_w']),
   'ram_gb':constraint('>=',settings['ram_gb']),'interfaces':constraint('contains_all',interfaces)},['Processing throughput for selected sensors needs benchmark evidence'])
+ states=plan.get('power_states',{'housekeeping_w':1.})
+ add('MON','Low-power Tier 1 monitor / power supervisor','low_power_controller',1,comp_g*.1,{**rail(5.),'active_w':constraint('<=',states['housekeeping_w'])},['Sensor polling while flight controller sleeps, wake interrupts and power-rail switching must be verified'])
  storage=max(.1,plan['daily_gb']*settings['retention_days']*1.25)
  data_mbps=sum(d['logged_mbps']*d['quantity'] for d in plan['devices'])
  add('MEM','Data storage','storage',1,comp_g*.1,{'capacity_gb':constraint('>=',storage),
@@ -134,7 +161,10 @@ def bom(result,sizing,plan,settings):
  add('CHG','Solar MPPT charger','charger',1,sol_g*.28,{'output_voltage_max_v':constraint('>=',maxbus),
   'input_power_w':constraint('>=',sizing['estimated_peak_battery_delivered_solar_w']/p['charger_eff']),
   'mppt':constraint('==',True)},['Solar IV/input range, battery chemistry/BMS coordination and charge temperature cutoff'])
- station_peak=plan['tier1_w']+plan['tier2_w']+settings['radio_w']
+ if 'power_states' in plan:
+  ps=plan['power_states']
+  station_peak=ps['tier1_w']+ps['tier2_w']+ps['radio_active_w']-ps['radio_sleep_w']+max(0.,ps['compute_active_w']-ps['computer_baseline_w']-ps['tier2_compute_increment_w'])
+ else:station_peak=plan['tier1_w']+plan['tier2_w']+settings['radio_w']
  add('PWR','Power conversion / distribution','power',1,settings['regulator_g'],{**bus(),
   'output_power_w':constraint('>=',station_peak*margin),'output_rails_v':constraint('contains_all',sorted(set([5.,settings['servo_v']]+[d['supply_v'] for d in plan['devices']])))},['Branch current/inrush and actuator supply draw; protective devices and connector pinouts'])
  add('ACT','Perch / transformation actuators','actuator',settings['servo_qty'],settings['servo_qty']*settings['servo_g'],{**rail(settings['servo_v']),
@@ -160,6 +190,10 @@ def bom(result,sizing,plan,settings):
   add(id,name,'reserve',1,settings[k]*(.65 if id=='STR' else 1),sourcing=False)
  add('MECH','Perch / transformation mechanism allowance','reserve',1,settings['structure_g']*.35,sourcing=False)
  if result.get('additional_payload_kg',0)>0:add('PLD','Additional unpowered payload allowance','reserve',1,result['additional_payload_kg']*1000,sourcing=False)
+ if 'power_states' in plan:
+  states=plan['power_states']
+  for host,limit in [('FCS',states['flight_sleep_w']),('CMP',states['compute_sleep_w']),('GPS',states['gnss_sleep_w']),('RF',states['radio_sleep_w'])]:
+   row=next(x for x in rows if x['id']==host);row['requirements']['sleep_w']=constraint('<=',limit)
  total=sum(r['mass_total_g'] for r in rows);flight=result['mass_lb']*.45359237*1000
  return {'rows':rows,'allocated_g':total,'flight_ready_g':flight,'margin_g':flight-total,'closed':total<=flight+1e-6,'storage_required_gb':storage,'peak_station_w':station_peak,'status':'Allocations and provisional selection requirements'}
 
