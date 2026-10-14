@@ -8,14 +8,14 @@ st.caption('Choose the capability to offer. See what engineering must achieve.')
 with st.sidebar:
  st.header('Platform & mission')
  mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,19.5,.1)
- distance=st.slider('Range per leg (statute miles)',.5,15.,6.,.5)
+ distance=st.slider('Range per leg (statute miles)',0.,10.,6.,.5)
  hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=6.,step=1.)
  good=st.slider('Good solar days (%)',0,100,50)
  st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
  deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=24.,step=1.)
  checkins=st.slider('Scheduled communications check-ins per day',0,48,4)
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
- tier2=st.slider('Tier 2 active minutes per day',0,1440,40)
+ tier2=st.slider('Tier 2 active minutes per day',0,360,40)
 
 mission_tab,sizing_tab=st.tabs(['Mission & Envelope','Engineering Sizing'])
 with sizing_tab:
@@ -47,7 +47,7 @@ with mission_tab:
  ec1,ec2,ec3=st.columns(3)
  env_good=ec1.slider('Envelope good-solar days (%)',1,100,100,key='env_good')
  env_check=ec2.number_input('Envelope check-ins per day',min_value=1,max_value=48,value=1,key='env_check')
- env_t2=ec3.number_input('Envelope Tier 2 minutes per day',min_value=1,max_value=1440,value=1,key='env_t2')
+ env_t2=ec3.number_input('Envelope Tier 2 minutes per day',min_value=1,max_value=360,value=1,key='env_t2')
  env_deadline=st.number_input('Envelope recharge deadline (hours)',min_value=1.,max_value=720.,value=1.,step=1.,key='env_deadline')
  st.caption('This envelope uses the current Advanced power, wind and battery assumptions. It allocates remaining mass to battery after reserving 4.35 kg for all nonbattery equipment. Lower activity defaults show an optimistic boundary, not a guaranteed operating envelope.')
  if st.button('Calculate mass envelope'):
