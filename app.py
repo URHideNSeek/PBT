@@ -5,22 +5,33 @@ from mission import size
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
+STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_recharge':1.,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20}
+PRESET_VERSION='least-mass-v1'
+def reset_startup_preset():
+ for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
+ st.session_state.pop('envelope_result',None)
+ st.session_state.pop('envelope_inputs',None)
+if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
+ reset_startup_preset()
+ st.session_state['startup_preset_version']=PRESET_VERSION
 with st.sidebar:
  st.header('Platform & mission')
- mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,12.,.1)
- distance=st.slider('Range per leg (statute miles)',0.,10.,.5,.5)
- hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=1.,step=1.)
- good=st.slider('Good solar days (%)',0,100,100)
+ st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
+ st.caption('Starting preset: 12 lb · 0.5 mile per leg · 1 hour on target.')
+ mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,12.,.1,key='mission_mass')
+ distance=st.slider('Range per leg (statute miles)',0.,10.,.5,.5,key='mission_range')
+ hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=1.,step=1.,key='mission_hours')
+ good=st.slider('Good solar days (%)',0,100,100,key='mission_solar')
  st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
- deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=1.,step=1.)
- checkins=st.slider('Scheduled communications check-ins per day',0,48,1)
+ deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=1.,step=1.,key='mission_recharge')
+ checkins=st.slider('Scheduled communications check-ins per day',0,48,1,key='mission_checkins')
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
- tier2=st.slider('Tier 2 active minutes per day',0,360,1)
+ tier2=st.slider('Tier 2 active minutes per day',0,360,1,key='mission_tier2')
 
 mission_tab,sizing_tab=st.tabs(['Mission & Envelope','Engineering Sizing'])
 with sizing_tab:
  with st.expander('Engineering model assumptions (not mission requirements)'):
-  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,20)/100
+  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,20,key='battery_fraction_pct')/100
   good_wh=st.number_input('Battery-delivered harvest on good day (Wh)',min_value=0.,value=90.)
   bad_wh=st.number_input('Battery-delivered harvest on bad day (Wh)',min_value=0.,value=15.)
   t1=st.number_input('Average Tier 1 + housekeeping power (W)',min_value=0.,value=5.)
