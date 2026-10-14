@@ -58,3 +58,15 @@ def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day
   if deficit==0: return 0.
   return deficit/net*24 if net>0 else None
  return dict(insertion_energy_feasible=insertion_ok,station_energy_feasible=station_ok,mission_energy_feasible=mission_ok,battery_capacity_wh=capacity,arrival_energy_wh=arrival_energy,minimum_station_energy_wh=minimum,end_station_energy_wh=end_energy,spilled_solar_wh=spilled,recovery_required_wh=recovery_required,solar_credit_wh=solar_credit,station_energy_wh=station_energy,insertion_wh=insertion,retrieval_wh=retrieval,mass_lb=mass_lb,battery_kg=p['battery_kg'],nonbattery_kg=m-p['battery_kg'],required_nominal_no_solar_wh=required_no_solar,required_nominal_average_solar_wh=required_average,required_installed_whkg=required_average/p['battery_kg'],station_wh_day=daily_load,solar_wh_day=weather_solar,daily_balance_wh=net,energy_margin_average_wh=margin,recovery_charge_h=recharge(recovery_required),reposition_charge_h=recharge(reposition_required),required_energy_neutral_good_day_wh=(daily_load-(1-good_pct/100)*bad_wh)/(good_pct/100) if good_pct else None,flight_w=r['flight_w'],hover_w=r['hover_w'],thrust_per_rotor_kgf=r['thrust_required_kgf'],peak_w=r['peak_w'],comms_min_day=comms_min,scheduled_checkins_day=checkins,anomaly_reports_day=events_day,engineering=p)
+
+# Provisional trade-study assumptions, not measured cell or pack data.
+TEMPERATURE_CAPACITY_POINTS=((-20.,.60),(-10.,.75),(0.,.85),(10.,.95),(20.,1.),(40.,1.),(50.,.90))
+def temperature_capacity_factor(low_c,high_c):
+ """Worst interpolated capacity across the range; assumes cell equals ambient."""
+ if not all(isinstance(x,(int,float)) and not isinstance(x,bool) and isfinite(x) for x in (low_c,high_c)) or not -20<=low_c<=high_c<=50:
+  raise ValueError('Temperature range must lie within -20 to 50 C')
+ def at(t):
+  for (a,fa),(b,fb) in zip(TEMPERATURE_CAPACITY_POINTS,TEMPERATURE_CAPACITY_POINTS[1:]):
+   if a<=t<=b:return fa+(fb-fa)*(t-a)/(b-a)
+ samples=[at(low_c),at(high_c)]+[f for t,f in TEMPERATURE_CAPACITY_POINTS if low_c<=t<=high_c]
+ return min(samples)
