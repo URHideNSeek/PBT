@@ -1,4 +1,5 @@
 import json
+from metric_units import conversion, metric_view, metric_label, legacy_parameters
 import pandas as pd
 import streamlit as st
 from model import F, DEFAULTS, MASS, validate, evaluate
@@ -14,24 +15,29 @@ with st.sidebar:
   try:
    s=json.load(uploaded)
    if s.get('schema_version')!=1: raise ValueError('Unsupported schema version')
+   if s.get('units')=='metric':s['parameters']=legacy_parameters(s['parameters'],F)
    validate(s['parameters'])
-   for k,v in s['parameters'].items(): st.session_state[k]=float(v)
+   for k,v in s['parameters'].items(): st.session_state[k]=float(v);st.session_state['metric_'+k]=float(v)*conversion(k)[1]
    st.session_state['name']=str(s.get('name','Imported'))
    st.success('Loaded')
   except (ValueError,TypeError,KeyError) as e: st.error(str(e))
  if st.button('Reset design exercise'):
-  for k,v in DEFAULTS.items(): st.session_state[k]=v
+  for k,v in DEFAULTS.items(): st.session_state[k]=v;st.session_state['metric_'+k]=v*conversion(k)[1]
  p={}
  for group in ['Limits','Mass','Battery','Flight','Mission','Station','Solar','Data','Thermal']:
   with st.expander(group,expanded=group=='Mission'):
    for k,(label,value,lo,hi,g) in F.items():
     if group==g:
      if k not in st.session_state: st.session_state[k]=value
-     p[k]=st.number_input(label,min_value=lo,max_value=hi,key=k,format='%.3f')
+     metric_key,factor=conversion(k)
+     display_label=label
+     for old,new in [('statute miles','km'),(' kgf',' N'),(' kt',' m/s'),(' in',' mm'),(' lb',' kg')]:display_label=display_label.replace(old,new)
+     metric_value=st.number_input(display_label,min_value=lo*factor,max_value=hi*factor,value=float(st.session_state[k])*factor,key='metric_'+k,format='%.3f')
+     p[k]=metric_value/factor
 try: r=evaluate(p)
 except ValueError as e: st.error(str(e)); st.stop()
 a,b,c,d=st.columns(4)
-a.metric('Aircraft mass',f"{r['mass_lb']:.2f} lb")
+a.metric('Aircraft mass',f"{r['mass_lb']*.45359237:.2f} kg")
 b.metric('Nominal / usable energy',f"{r['nominal_wh']:.0f} / {r['usable_wh']:.0f} Wh")
 c.metric('Mission energy margin',f"{r['margin_wh']:.0f} Wh" if r['margin_wh'] is not None else 'Infeasible route')
 d.metric('Calculated checks',f"{sum(r['checks'].values())} / {len(r['checks'])}")
@@ -43,7 +49,7 @@ with tabs[0]:
    st.subheader('Energy during Persist')
    st.line_chart(pd.DataFrame(r['trace']).set_index('Station hour'))
    st.caption('Recovery protection includes return energy, reserve and SOC floor. Solar is normalized across 06:00–18:00. Activity is spread uniformly; real early activity may lower minimum energy.')
-  values=[{'Metric':k.replace('_',' '),'Value':None if v is None else round(v,2)} for k,v in r.items() if k not in ['checks','trace']]
+  values=[{'Metric':k.replace('_',' '),'Value':None if v is None else round(v,2)} for k,v in metric_view(r).items() if k not in ['checks','trace']]
   st.dataframe(pd.DataFrame(values),hide_index=True,width='stretch')
  with right:
   st.subheader('Closure checks')
@@ -51,25 +57,26 @@ with tabs[0]:
   st.bar_chart(pd.DataFrame({'kg':{F[k][0]:p[k] for k in MASS}}))
 with tabs[1]:
  name=st.text_input('Scenario name',value='Design exercise',key='name')
- current={'schema_version':1,'name':name,'parameters':p.copy(),'basis':'Assumed / user-entered'}
+ current={'schema_version':1,'units':'metric','name':name,'parameters':p.copy(),'basis':'Assumed / user-entered'}
  if st.button('Save to comparison matrix'):
   st.session_state.scenarios=[s for s in st.session_state.scenarios if s['name']!=name]+[current]
  st.caption('Same-name saves replace the existing row. Download JSON to preserve session-local scenarios.')
- st.download_button('Download current scenario JSON',json.dumps(current,indent=2),file_name='scenario.json')
+ st.download_button('Download current scenario JSON',json.dumps(metric_view(current),indent=2),file_name='scenario.json')
  rows=[]
  for s in st.session_state.scenarios:
   q=evaluate(s['parameters'])
   rows.append({'Scenario':s['name'],**{k:q[k] for k in ['mass_lb','nominal_wh','flight_w','station_wh','solar_daily_wh','margin_wh']},'Checks passed':sum(q['checks'].values()),'All calculated checks pass':all(q['checks'].values())})
  if rows:
-  frame=pd.DataFrame(rows).set_index('Scenario'); st.dataframe(frame.T,width='stretch')
+  frame=pd.DataFrame(metric_view(rows)).set_index('Scenario'); st.dataframe(frame.T,width='stretch')
   st.download_button('Download matrix CSV',frame.to_csv(),file_name='trade_matrix.csv')
-  st.download_button('Download scenario bundle',json.dumps(st.session_state.scenarios,indent=2),file_name='scenarios.json')
+  st.download_button('Download scenario bundle',json.dumps(metric_view(st.session_state.scenarios),indent=2),file_name='scenarios.json')
   if st.button('Clear matrix'): st.session_state.scenarios=[]; st.rerun()
  else: st.info('Save multiple designs to compare them here.')
 with tabs[2]:
- key=st.selectbox('Sweep parameter',list(F),format_func=lambda k:F[k][0])
- lo=st.number_input('Sweep minimum',value=float(max(F[key][2],p[key]*.8)))
- hi=st.number_input('Sweep maximum',value=float(min(F[key][3],p[key]*1.2)))
+ key=st.selectbox('Sweep parameter',list(F),format_func=lambda k:metric_label(F[k][0]))
+ sweep_factor=conversion(key)[1]
+ lo=st.number_input('Sweep minimum (metric units)',value=float(max(F[key][2],p[key]*.8))*sweep_factor)/sweep_factor
+ hi=st.number_input('Sweep maximum (metric units)',value=float(min(F[key][3],p[key]*1.2))*sweep_factor)/sweep_factor
  rows=[]
  if hi>=lo:
   for i in range(21):
@@ -77,7 +84,7 @@ with tabs[2]:
    if key=='rotors': value=float(round(value))
    try:
     q=evaluate(p | {key:value})
-    rows.append({'Parameter':value,'Energy margin Wh':q['margin_wh'],'Mass lb':q['mass_lb'],'Flight W':q['flight_w'],'Checks passed':sum(q['checks'].values())})
+    rows.append({'Parameter':value*sweep_factor,'Energy margin Wh':q['margin_wh'],'Mass kg':q['mass_lb']*.45359237,'Flight W':q['flight_w'],'Checks passed':sum(q['checks'].values())})
    except ValueError: pass
  if rows:
   frame=pd.DataFrame(rows).drop_duplicates('Parameter').set_index('Parameter')
@@ -98,4 +105,4 @@ with tabs[3]:
 ### Additional engineering needed
 Folding/packaging/CG, perch and gust loads, motor/ESC voltage and thermal limits, battery sag, sensor detection performance, RF link budgets, detailed activity scheduling and weather profiles. RPM and acoustic predictions require data and are not fabricated. There is no procurement model.
 ''')
- st.dataframe(pd.DataFrame([{'Parameter':F[k][0],'Value':v,'Basis':'Assumed / user-entered'} for k,v in p.items()]),hide_index=True,width='stretch')
+ st.dataframe(pd.DataFrame([{'Parameter':metric_label(F[k][0]),'Value':v*conversion(k)[1],'Basis':'Assumed / user-entered'} for k,v in p.items()]),hide_index=True,width='stretch')
