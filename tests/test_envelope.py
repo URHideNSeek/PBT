@@ -18,4 +18,4 @@ class EnvelopeUI(unittest.TestCase):
   a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=20)
   next(b for b in a.button if b.label=='Calculate mass envelope').click().run(timeout=20)
   self.assertEqual(len(a.exception),0)
-  self.assertEqual(a.session_state['envelope_result']['frame'].shape,(120,4))
+  self.assertEqual(a.session_state['envelope_result']['frame'].shape,(120,5))
