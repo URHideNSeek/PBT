@@ -18,6 +18,20 @@ SENSORS={
  'radar':('Passive radar receiver',400.,10.,.1,10.,'USB'),
 }
 
+REQUIRED_FLIGHT_PERCH_SENSORS=(
+ ('IMU — accelerometer and gyroscope','Flight controller; attitude/control'),
+ ('Magnetometer / compass','GNSS/compass module; heading'),
+ ('Barometer','Flight controller; altitude estimate'),
+ ('GNSS receiver','Flight GNSS/compass module; route navigation'),
+ ('Navigation / perch camera','Navigation camera allocation; pole alignment'),
+ ('Short-range distance sensor','Dedicated 20 g allocation; approach clearance'),
+ ('Perch contact sensor','Dedicated 5 g allocation; physical contact'),
+ ('Grip / latch position sensor','Dedicated 5 g allocation; secured-state feedback'),
+ ('Battery voltage, current and temperature sensing','Battery/BMS allocation; departure and power protection'),
+)
+FIXED_PERCH_SENSOR_G=30.
+FIXED_PERCH_SENSOR_SLEEP_W=.02
+
 def sensor_plan(tier1,tier2,profiles,duty,tier2_min_day,base_w):
  if not 0<=duty<=1 or not 0<=tier2_min_day<=1440 or base_w<0:raise ValueError('Invalid sensor duty or base power')
  t2_fraction=tier2_min_day/1440
@@ -58,7 +72,8 @@ def bom(result,sizing,plan,settings):
   'nominal_wh':constraint('>=',sizing['battery_nominal_required_average_solar_wh']),
   'nominal_voltage_v':constraint('between',[sizing['assumed_nominal_voltage_v']*.9,sizing['assumed_nominal_voltage_v']*1.1]),
   'voltage_min_v':constraint('>=',minbus),'voltage_max_v':constraint('<=',maxbus),
-  'continuous_a':constraint('>=',pack_cont),'peak_a':constraint('>=',pack_peak)},['Pack temperature capacity/power curves and allowed charging temperatures require verification'])
+  'continuous_a':constraint('>=',pack_cont),'peak_a':constraint('>=',pack_peak),
+  'voltage_sensing':constraint('==',True),'current_sensing':constraint('==',True),'temperature_sensing':constraint('==',True)},['Pack temperature capacity/power curves and allowed charging temperatures require verification'])
  prop_g=p['propulsion_kg']*1000
  add('MOT','Brushless motors','motor',int(g),prop_g*.65,{**bus(),'thrust_kgf':constraint('>=',sizing['continuous_thrust_per_rotor_kgf']),
   'tested_prop_in':constraint('==',p['prop']),'tested_voltage_v':constraint('between',[minbus,maxbus]),
@@ -75,7 +90,8 @@ def bom(result,sizing,plan,settings):
  comp_g=p['compute_kg']*1000
  add('FCS','Flight controller','flight_controller',1,comp_g*.1,{**bus(),'active_w':constraint('<=',settings['autopilot_w']),
   'pwm_outputs':constraint('>=',int(g)+settings['servo_qty']),'protocols':constraint('contains_any',['PX4','ArduPilot']),
-  'interfaces':constraint('contains_all',['UART','CAN'])})
+  'interfaces':constraint('contains_all',['UART','CAN']),
+  'accelerometer':constraint('==',True),'gyroscope':constraint('==',True),'barometer':constraint('==',True)})
  interfaces=sorted(set(d['interface'] for d in plan['devices']))
  add('CMP','Payload computer','compute',1,comp_g*.65,{**rail(5.),'active_w':constraint('<=',settings['compute_w']),
   'ram_gb':constraint('>=',settings['ram_gb']),'interfaces':constraint('contains_all',interfaces)},['Processing throughput for selected sensors needs benchmark evidence'])
@@ -87,6 +103,10 @@ def bom(result,sizing,plan,settings):
   'pixels_x':constraint('>=',1280),'pixels_y':constraint('>=',720),'fps':constraint('>=',30)},['Perch detection, field of view, low light and landing accuracy need definition'])
  add('GPS','Flight GNSS / compass','gnss',1,settings['navigation_g'],{**rail(5.),'active_w':constraint('<=',1.5),'accuracy_m':constraint('<=',settings['gnss_accuracy_m']),
   'update_hz':constraint('>=',5.),'interface':constraint('in',['UART','CAN']),'compass':constraint('==',True)})
+ add('PRNG','Required perch distance sensor','range',1,20.,{**rail(5.),'active_w':constraint('<=',.5),'interface':constraint('in',['UART','I2C']),
+  'range_m':constraint('>=',10.),'range_accuracy_cm':constraint('<=',5.),'sample_hz':constraint('>=',10.)},['Perch geometry, reflectivity, field of view and approach performance require verification'])
+ add('PCT','Required perch contact sensor','contact',1,5.,{'interface':constraint('==','GPIO')},['Contact force/travel and debounce requirements need mechanism definition'])
+ add('LCK','Required grip / latch position sensor','position_sensor',1,5.,{'interface':constraint('==','GPIO')},['Locked-position tolerance, independent secured-state verification and mechanism interface'])
  comm_g=p['comms_kg']*1000
  add('RF','Terrestrial mesh radio','radio',1,comm_g*.12,{**rail(settings['radio_supply_v']),'active_w':constraint('<=',settings['radio_w']),
   'frequency_min_mhz':constraint('<=',settings['frequency_mhz']),'frequency_max_mhz':constraint('>=',settings['frequency_mhz']),
