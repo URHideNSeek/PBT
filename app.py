@@ -18,11 +18,13 @@ if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
 with st.sidebar:
  st.header('Platform & mission')
  st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
- st.caption('Starting preset: 5.443 kg · 0.805 km per leg · 1 hour on target.')
+ st.caption('Starting preset: 5.443 kg (12 lb) · 0.805 km (0.5 mi) per leg · 1 hour on target.')
  mass_kg=st.slider('Flight-ready mass, including payload (kg)',3.6,9.1,step=.05,key='mission_mass',format='%.3f')
  mass=mass_kg/.45359237
+ st.caption(f'{mass_kg:.3f} kg / {mass:.2f} lb · limits 3.6–9.1 kg / 7.94–20.06 lb')
  distance_km=st.slider('Range per leg (km)',0.,16.1,step=.1,key='mission_range',format='%.3f')
  distance=distance_km/1.609344
+ st.caption(f'{distance_km:.3f} km / {distance:.2f} mi · limits 0–16.1 km / 0–10.00 mi')
  hours=st.slider('Perched time (hours)',1.,720.,step=1.,key='mission_hours')
  st.caption(f'{hours/24:.2f} days perched; maximum 30 days.')
  good=st.slider('Good solar days (%)',0,100,key='mission_solar')
@@ -31,6 +33,7 @@ with st.sidebar:
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
  tier2=st.slider('Tier 2 active minutes per day',0,360,key='mission_tier2')
  temp_low,temp_high=st.slider('Operating temperature range (°C)',-20,50,key='mission_temperature')
+ st.caption(f'{temp_low:g}–{temp_high:g} °C / {temp_low*1.8+32:g}–{temp_high*1.8+32:g} °F')
  temperature_factor=temperature_capacity_factor(temp_low,temp_high)
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
@@ -190,8 +193,21 @@ with mission_tab:
   st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'mass_lb':mass,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
  saved=st.session_state['envelope_result']
  if not any(x is not None for x in saved['points']):st.warning('No payload/range combination closes this perched duration at the selected takeoff mass while preserving return energy.')
- chart_data=saved['frame'].melt(id_vars='Range per leg (km)',value_vars=['Payload mass (kg)','Total aircraft mass (kg)'],var_name='Mass type',value_name='Mass (kg)')
- st.vega_lite_chart(chart_data,{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (km)','type':'quantitative','title':'Initial hop / return range (km)'},'y':{'field':'Mass (kg)','type':'quantitative','scale':{'zero':True}},'color':{'field':'Mass type','type':'nominal','sort':['Payload mass (kg)','Total aircraft mass (kg)'],'legend':{'orient':'bottom','title':None,'columns':2,'labelLimit':250}},'tooltip':[{'field':'Range per leg (km)'},{'field':'Mass type'},{'field':'Mass (kg)'}]},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
+ chart_data=saved['frame'].copy()
+ chart_data['Range per leg (mi)']=chart_data['Range per leg (km)']/1.609344
+ chart_data['Payload mass (lb)']=chart_data['Payload mass (kg)']/.45359237
+ chart_data['Total aircraft mass (lb)']=chart_data['Total aircraft mass (kg)']/.45359237
+ dual_range_axis={'title':'Initial hop / return range · km / mi','labelExpr':"format(datum.value, '.1f') + ' km / ' + format(datum.value / 1.609344, '.1f') + ' mi'"}
+ dual_mass_label="format(datum.value, '.1f') + ' kg / ' + format(datum.value / 0.45359237, '.1f') + ' lb'"
+ layers=[]
+ for field,series,side,scale_domain in [('Payload mass (kg)','Payload mass','left',[0,3]),('Total aircraft mass (kg)','Total aircraft mass','right',[0,9.1])]:
+  layers.append({'transform':[{'calculate':json.dumps(series),'as':'Mass type'}],'mark':{'type':'line','point':True,'clip':True},'encoding':{
+   'x':{'field':'Range per leg (km)','type':'quantitative','axis':dual_range_axis},
+   'y':{'field':field,'type':'quantitative','scale':{'domain':scale_domain,'nice':False},'axis':{'orient':side,'title':series+' · kg / lb','labelExpr':dual_mass_label}},
+   'color':{'field':'Mass type','type':'nominal','scale':{'domain':['Payload mass','Total aircraft mass'],'range':['#2686c9','#ed8b23']},'legend':{'orient':'bottom','title':None,'columns':2,'labelLimit':250}},
+   'tooltip':[{'field':'Range per leg (km)','format':'.2f'},{'field':'Range per leg (mi)','format':'.2f'},{'field':field,'format':'.2f'},{'field':field.replace('(kg)','(lb)'),'format':'.2f'}]}})
+ st.vega_lite_chart(chart_data,{'layer':layers,'resolve':{'scale':{'y':'independent'}},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
+ st.caption('Payload uses the left axis, fixed at 0–3 kg (0–6.61 lb). Total aircraft mass uses the right axis. Both axes and range ticks show metric and imperial equivalents; values above 3 kg payload are clipped in this view and remain available in the CSV.')
  st.caption('Total aircraft mass is the selected flight-ready mass. Payload and battery trade within that fixed total; total mass includes both plus hardware and reserves. Only energy-feasible points are plotted.')
  st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
