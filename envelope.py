@@ -1,0 +1,25 @@
+"""Conditional mass/range envelope; all mission activities remain positive."""
+from mission import size
+
+def maximum_range(mass_lb, hours, *, nonbattery_kg=4.35, good_pct=100.,checkins=1,tier2_min_day=1.,min_range=.5,max_range=15.,recharge_limit_h=1.,**engineering):
+ if min(hours,good_pct,checkins,tier2_min_day,min_range,recharge_limit_h)<=0: raise ValueError('Envelope mission selections must be nonzero')
+ if max_range<min_range or nonbattery_kg<=0: raise ValueError('Invalid envelope bounds')
+ mass_kg=mass_lb*.45359237
+ fraction=(mass_kg-nonbattery_kg)/mass_kg
+ if not .2<=fraction<=.75: return None
+ def feasible(distance):
+  try:r=size(mass_lb=mass_lb,range_mi=distance,days=hours/24,good_pct=good_pct,checkins=checkins,tier2_min_day=tier2_min_day,battery_fraction=fraction,**engineering)
+  except ValueError:return False
+  p=r['engineering']
+  return (mass_lb<p['mass_max'] and p['prop']<p['prop_max'] and p['solar']<p['solar_max'] and r['mission_energy_feasible'] and r['thrust_per_rotor_kgf']<=p['thrust'] and max(r['hover_w'],r['flight_w'])<=r['battery_kg']*p['wkg'] and r['peak_w']<=r['battery_kg']*p['peak_wkg'] and r['recovery_charge_h'] is not None and r['recovery_charge_h']<=recharge_limit_h)
+ if not feasible(min_range):return None
+ if feasible(max_range):return max_range
+ lo,hi=min_range,max_range
+ for _ in range(24):
+  mid=(lo+hi)/2
+  if feasible(mid):lo=mid
+  else:hi=mid
+ return lo
+
+def curve(hours,**kwargs):
+ return [{'Mass lb':round(8+i*.1,1),'Max range per leg mi':maximum_range(round(8+i*.1,1),hours,**kwargs)} for i in range(120)]
