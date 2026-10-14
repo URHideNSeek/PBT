@@ -13,7 +13,7 @@ F={
 'whkg':('Installed battery Wh/kg',322.,50.,600.,'Battery'),
 'soc':('Operator departure SOC %',95.,1.,100.,'Battery'),
 'floor':('Analysis minimum SOC %',20.,0.,90.,'Battery'),
-'derate':('Temperature / age capacity factor',.9,.1,1.,'Battery'),
+'derate':('Temperature / age capacity factor',.9,.01,1.,'Battery'),
 'voltage':('Minimum loaded bus voltage V',18.,5.,60.,'Battery'),
 'wkg':('Battery continuous W/kg',1000.,100.,5000.,'Battery'),
 'peak_wkg':('Battery peak W/kg',1500.,100.,8000.,'Battery'),
