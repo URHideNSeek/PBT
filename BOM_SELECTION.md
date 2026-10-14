@@ -67,3 +67,6 @@ The mission graph shows payload mass and total aircraft mass against range, both
 
 ## Metric presentation
 All mission controls, chart axes, engineering tables and downloadable trade/BOM outputs use metric units: kg/g, km/m/mm, m/s, N, N m and Celsius. Electrical energy remains Wh. The validated solver retains its existing private unit conventions behind an explicit conversion boundary; converted exports name their units. The startup point preserves the prior physical mass and distance (5.44310844 kg and 0.804672 km).
+
+## Payload drives aircraft sizing
+The initial mass slider selects total mission payload from 0 to 6 lb (0 to 2.72155422 kg), including the selected sensors. Aircraft mass and battery mass are driven outputs, not slider inputs. A battery-mass scan with local refinement finds the lightest closing allocation within the configured aircraft, thrust, peak/continuous power and mission-energy limits. The range graph holds payload fixed and recalculates total aircraft mass at each range. Payload below selected sensor mass is infeasible; extra unpowered payload is a separate BOM row. Default payload is 0.060 kg, matching the initial installed mission sensors. No battery-fraction driving slider remains.
