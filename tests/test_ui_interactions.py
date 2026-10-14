@@ -8,7 +8,7 @@ class InteractionTests(unittest.TestCase):
   for kind in ['slider','number_input']:
    for w in getattr(a,kind):
     values=[(w.min,w.min),w.value,(w.max,w.max)] if isinstance(w.value,tuple) else [w.min,w.value,w.max if w.max is not None else max(1000.,w.value*10)]
-    if w.label in {"Flight-ready mass, including payload (lb)","Range per leg (statute miles)","Perched time (hours)","Good solar days (%)","Scheduled communications check-ins per day","Tier 2 active minutes per day","Operating temperature range (°C)"}: definitions.append((kind,w.label,w.value,values))
+    if w.label in {"Flight-ready mass, including payload (kg)","Range per leg (km)","Perched time (hours)","Good solar days (%)","Scheduled communications check-ins per day","Tier 2 active minutes per day","Operating temperature range (°C)"}: definitions.append((kind,w.label,w.value,values))
   self.assertEqual(len(definitions),7)
   def set_value(kind,label,value):
    next(w for w in getattr(a,kind) if w.label==label).set_value(value)
@@ -20,7 +20,7 @@ class InteractionTests(unittest.TestCase):
     set_value(kind,label,v);run()
    set_value(kind,label,default)
   # Exercise all pairs/triples of the seven customer controls at endpoint mixtures.
-  labels={'Flight-ready mass, including payload (lb)','Range per leg (statute miles)','Perched time (hours)','Good solar days (%)','Scheduled communications check-ins per day','Tier 2 active minutes per day','Operating temperature range (°C)'}
+  labels={'Flight-ready mass, including payload (kg)','Range per leg (km)','Perched time (hours)','Good solar days (%)','Scheduled communications check-ins per day','Tier 2 active minutes per day','Operating temperature range (°C)'}
   core=[d for d in definitions if d[1] in labels]
   for n in [2,3]:
    for subset in itertools.combinations(core,n):
@@ -41,10 +41,11 @@ class InteractionTests(unittest.TestCase):
 class DetailedUIBoundaryTests(unittest.TestCase):
  def test_all_detailed_parameter_boundaries(self):
   from model import F
+  from metric_units import conversion
   a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'advanced_app.py')).run(timeout=20)
   for key,(_,default,low,high,_) in F.items():
    for value in sorted(set([low,default,high])):
-    a.number_input(key=key).set_value(float(value)).run(timeout=20)
+    a.number_input(key='metric_'+key).set_value(float(value)*conversion(key)[1]).run(timeout=20)
     self.assertEqual(len(a.exception),0)
-   a.number_input(key=key).set_value(float(default))
+   a.number_input(key='metric_'+key).set_value(float(default)*conversion(key)[1])
   a.run(timeout=20);self.assertEqual(len(a.exception),0)
