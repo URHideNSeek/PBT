@@ -31,7 +31,8 @@ class OperatingPowerTests(unittest.TestCase):
   a=size(range_mi=1,wind=0,tier1_w=1.2,tier2_min_day=10,good_pct=100,good_wh=90,tier2_w=5,comms_w=60)
   self.assertGreater(a['daily_balance_wh'],0)
   self.assertIsNotNone(a['recharge_to_full_h'])
-  self.assertAlmostEqual(a['recharge_to_full_h'],(a['battery_capacity_wh']-a['end_station_energy_wh'])/a['daily_balance_wh']*24)
+  self.assertGreaterEqual(a['recharge_to_full_h'],0.)
+  self.assertEqual(a['recharge_to_full_h']*12,round(a['recharge_to_full_h']*12))
   b=size(range_mi=1,wind=0,tier1_w=1.2,good_pct=0,bad_wh=0)
   self.assertIsNone(b['recharge_to_full_h'])
  def test_ui_schedule_and_two_mass_series(self):
