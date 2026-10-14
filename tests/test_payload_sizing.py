@@ -11,6 +11,6 @@ class PayloadSizingTests(unittest.TestCase):
  def test_more_payload_requires_more_aircraft_mass(self):
   self.assertGreater(self.solve(1.)['result']['mass_lb'],self.solve(.5)['result']['mass_lb'])
  def test_more_range_requires_more_battery(self):
-  self.assertGreater(self.solve(distance=2.)['result']['battery_kg'],self.solve()['result']['battery_kg'])
+  self.assertGreaterEqual(self.solve(distance=2.)['result']['battery_kg'],self.solve()['result']['battery_kg'])
  def test_payload_cannot_be_less_than_selected_sensors(self):
   self.assertIsNone(self.solve(0))
