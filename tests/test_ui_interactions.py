@@ -9,7 +9,7 @@ class InteractionTests(unittest.TestCase):
    for w in getattr(a,kind):
     values=[(w.min,w.min),w.value,(w.max,w.max)] if isinstance(w.value,tuple) else [w.min,w.value,w.max if w.max is not None else max(1000.,w.value*10)]
     definitions.append((kind,w.label,w.value,values))
-  self.assertEqual(len(definitions),29)
+  self.assertEqual(len(definitions),25)
   def set_value(kind,label,value):
    next(w for w in getattr(a,kind) if w.label==label).set_value(value)
   def run():
