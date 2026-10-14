@@ -38,7 +38,7 @@ class OperatingPowerTests(unittest.TestCase):
   a=AppTest.from_file(str(ROOT/'app.py')).run(timeout=30)
   self.assertFalse(a.exception)
   before=float(next(x for x in a.metric if x.label=='Perched consumption').value.split()[0])
-  self.assertIn('Total aircraft mass (lb)',a.session_state['envelope_result']['frame'])
+  self.assertIn('Total aircraft mass (kg)',a.session_state['envelope_result']['frame'])
   a.slider(key='mission_checkins').set_value(12).run(timeout=30)
   after=float(next(x for x in a.metric if x.label=='Perched consumption').value.split()[0])
   self.assertGreater(after,before)
