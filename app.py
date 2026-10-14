@@ -1,12 +1,12 @@
 import json
 import pandas as pd
 import streamlit as st
-from mission import size
+from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POINTS
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_recharge':1.,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20}
-PRESET_VERSION='least-mass-v1'
+STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_recharge':1.,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+PRESET_VERSION='least-mass-temperature-v2'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
  st.session_state.pop('envelope_result',None)
@@ -27,6 +27,9 @@ with st.sidebar:
  checkins=st.slider('Scheduled communications check-ins per day',0,48,key='mission_checkins')
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
  tier2=st.slider('Tier 2 active minutes per day',0,360,key='mission_tier2')
+ temp_low,temp_high=st.slider('Operating temperature range (°C)',-20,50,key='mission_temperature')
+ temperature_factor=temperature_capacity_factor(temp_low,temp_high)
+ st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
 mission_tab,sizing_tab=st.tabs(['Mission & Envelope','Engineering Sizing'])
 with sizing_tab:
@@ -45,7 +48,11 @@ with sizing_tab:
   wind=st.slider('Steady wind (kt)',0.,30.,20.)
   speed=st.slider('True cruise airspeed (kt)',10.,60.,35.)
   whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
-  derate=st.slider('Temperature/aging capacity factor',.1,1.,.9,.05)
+  age_factor=st.slider('Aging/other capacity factor',.1,1.,.9,.05)
+  derate=age_factor*temperature_factor
+  st.caption(f'Combined capacity factor: {derate:.0%} = temperature {temperature_factor:.0%} × aging/other {age_factor:.0%}. Departure SOC remains 95%.')
+  st.dataframe(pd.DataFrame(TEMPERATURE_CAPACITY_POINTS,columns=['Temperature (°C)','Provisional capacity factor']),hide_index=True)
+  st.caption('Temperature factors are unvalidated trade assumptions; replace with pack test data. Battery temperature is assumed equal to ambient, without heating/cooling energy. Charging-temperature limits, cold-current capability and thermal transients are not modeled.')
   thermal_unused=st.caption('Detailed flight/prop/solar assumptions remain in advanced_app.py. This mission view is an inverse sizing study, not full feasibility verification.')
   ct=st.number_input('Assumed propeller thrust coefficient CT',min_value=.01,max_value=.3,value=.10,step=.01)
   nominal_v=st.number_input('Assumed nominal battery voltage (V)',min_value=18.,max_value=60.,value=24.,step=1.)
@@ -58,7 +65,7 @@ with mission_tab:
  env_good,env_check,env_t2,env_deadline=good,checkins,tier2,deadline
  st.caption('Remaining mass is allocated to battery after reserving 4.35 kg for nonbattery equipment. Curves are conditional model estimates.')
  calculate_envelope=st.button('Calculate mass envelope')
- envelope_inputs=(hours,good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
+ envelope_inputs=(temp_low,temp_high,hours,good,checkins,tier2,deadline,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,hop,wind,speed,whkg,derate)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs:
   st.session_state['envelope_inputs']=envelope_inputs
   from envelope import curve
@@ -67,7 +74,7 @@ with mission_tab:
    points=curve(target_h,max_range=10.,good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,recharge_limit_h=env_deadline,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
    lines[f'{target_h:g} hours on target']=[x['Max range per leg mi'] for x in points]
   frame=pd.DataFrame(lines,index=[x['Mass lb'] for x in points]);frame.index.name='Flight-ready mass (lb)'
-  st.session_state['envelope_result']={'frame':frame,'settings':{'selected_hours':hours,'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline},'model_inputs':dict(good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
+  st.session_state['envelope_result']={'frame':frame,'settings':{'selected_hours':hours,'good_solar_pct':env_good,'checkins_day':env_check,'tier2_min_day':env_t2,'wind_kt':wind,'airspeed_kt':speed,'battery_whkg':whkg,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'capacity_factor':derate,'nonbattery_kg':4.35,'recharge_limit_h':env_deadline},'model_inputs':dict(good_pct=env_good,checkins=env_check,tier2_min_day=env_t2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)}
  if 'envelope_result' in st.session_state:
   saved=st.session_state['envelope_result']
   order=list(dict.fromkeys(['1 hours on target',f'{hours:g} hours on target','24 hours on target','72 hours on target']))
@@ -100,6 +107,7 @@ with mission_tab:
  a.metric('Required nominal battery · no solar credit',f"{r['required_nominal_no_solar_wh']:.0f} Wh")
  b.metric('Required battery · average solar credit',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
  c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
+ st.caption(f"Temperature-adjusted battery capacity: {r['battery_capacity_wh']:.0f} Wh; energy at 95% departure SOC: {r['battery_capacity_wh']*.95:.0f} Wh. Temperature affects capacity, not the 95% dispatch threshold.")
  st.subheader('Ready to move?')
  for label,key in [('Recover to operator','recovery_charge_h'),('Reposition to next perch','reposition_charge_h')]:
   v=r[key]
@@ -115,7 +123,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'desired_recharge_h':deadline,'battery_fraction':fraction,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering']}
+ record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'desired_recharge_h':deadline,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering']}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
