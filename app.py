@@ -37,9 +37,15 @@ from pathlib import Path
 with sizing_tab:
  st.subheader('Sensor configuration')
  st.caption('Tier 1 follows the selected duty cycle. Tier 2 follows Mission & Envelope active minutes/day. Each selected device is allocated once.')
- a,b=st.columns(2)
- tier1_keys=a.multiselect('Tier 1 sensors',list(SENSORS),default=['environment','pressure','light'],format_func=lambda k:SENSORS[k][0])
- tier2_keys=b.multiselect('Tier 2 sensors',list(SENSORS),default=['visible','thermal'],format_func=lambda k:SENSORS[k][0])
+ tier1_keys=[];tier2_keys=[]
+ with st.container(border=True):
+  name_col,tier1_col,tier2_col=st.columns([4,1,1],gap='small')
+  name_col.markdown('**Sensor**');tier1_col.markdown('**Tier 1**');tier2_col.markdown('**Tier 2**')
+  for sensor_key,sensor_details in SENSORS.items():
+   name_col,tier1_col,tier2_col=st.columns([4,1,1],gap='small',vertical_alignment='center')
+   name_col.write(sensor_details[0])
+   if tier1_col.checkbox(sensor_details[0]+' · Tier 1',value=sensor_key in ['environment','pressure','light'],key='sensor_t1_'+sensor_key,label_visibility='collapsed'):tier1_keys.append(sensor_key)
+   if tier2_col.checkbox(sensor_details[0]+' · Tier 2',value=sensor_key in ['visible','thermal'],key='sensor_t2_'+sensor_key,label_visibility='collapsed'):tier2_keys.append(sensor_key)
  sensor_duty=st.slider('Tier 1 duty cycle (%)',0,100,100)/100
  profiles={}
  with st.expander('Sensor allocations and minimum selection parameters'):
