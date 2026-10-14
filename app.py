@@ -6,8 +6,8 @@ from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POIN
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_mass':2.72155422,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
-PRESET_VERSION='metric-six-lb-v4'
+STARTUP_PRESET={'mission_payload':.06,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+PRESET_VERSION='payload-driven-v5'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
  st.session_state.pop('envelope_result',None)
@@ -18,10 +18,9 @@ if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
 with st.sidebar:
  st.header('Platform & mission')
  st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
- st.caption('Starting preset: 2.722 kg (6 lb) · 0.805 km (0.5 mi) per leg · 1 hour on target.')
- mass_kg=st.slider('Flight-ready mass, including payload (kg)',0.,2.72155422,step=.05,key='mission_mass',format='%.3f')
- mass=mass_kg/.45359237
- st.caption(f'{mass_kg:.3f} kg / {mass:.2f} lb · limits 0–2.722 kg / 0–6 lb')
+ st.caption('Starting preset: 0.060 kg (0.13 lb) payload · 0.805 km (0.5 mi) per leg · 1 hour on target.')
+ payload_kg=st.slider('Payload mass (kg)',0.,2.72155422,step=.05,key='mission_payload',format='%.3f')
+ st.caption(f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb · limits 0–2.722 kg / 0–6 lb')
  distance_km=st.slider('Range per leg (km)',0.,16.1,step=.1,key='mission_range',format='%.3f')
  distance=distance_km/1.609344
  st.caption(f'{distance_km:.3f} km / {distance:.2f} mi · limits 0–16.1 km / 0–10.00 mi')
@@ -125,7 +124,7 @@ with sizing_tab:
   st.caption('Structure allowance is split 65% enclosure/mounting and 35% perch/transformation mechanism. Wiring, fasteners and sealants are separate. Controller and field kit are outside the aircraft mass budget.')
   st.caption('Telemetry distance follows range per leg. Antenna-dependent installed range is not proved by a marketing range figure. Motors, ESCs and props require matched test data. Actuator torque must come from mechanism loads.')
  with st.expander('Engineering model assumptions (not mission requirements)'):
-  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,key='battery_fraction_pct')/100
+  st.caption('Battery mass and total aircraft mass are derived from the selected payload and mission, including return-energy protection.')
   good_wh=st.number_input('Battery-delivered harvest on good day (Wh)',min_value=0.,value=90.)
   bad_wh=st.number_input('Battery-delivered harvest on bad day (Wh)',min_value=0.,value=15.)
   housekeeping_extra=st.number_input('Low-power Tier 1 monitor / housekeeping (W)',min_value=0.,value=1.)
@@ -177,22 +176,22 @@ with mission_tab:
 
  st.divider()
  st.subheader('Payload mass versus range')
- st.caption('At the selected flight-ready mass and perched duration, available mass is traded between battery and payload. Payload includes selected mission sensors plus unpowered extra payload; installed flight/perch hardware and all reserves remain fixed.')
+ st.caption('Payload is the selected total mission payload, including installed mission sensors and any extra unpowered payload. Total aircraft mass is calculated from hardware, reserves, payload and the minimum battery allocation that closes the mission.')
  calculate_envelope=st.button('Calculate payload envelope')
- envelope_inputs=(json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),mass,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate)
+ envelope_inputs=(json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate)
  model_inputs=dict(**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
-  from envelope import payload_curve
-  points=payload_curve(hours,mass_lb=mass,nonbattery_kg=fixed_nonbattery,**model_inputs)
+  from payload_sizing import payload_mass_curve
+  points=payload_mass_curve(payload_kg,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
   data=[{k:v for k,v in x.items() if k!='result'} if x else {'Range per leg (mi)':i*.25,'Payload mass (lb)':None,'Additional payload (kg)':None,'Battery fraction':None} for i,x in enumerate(points)]
   frame=pd.DataFrame(data)
   frame['Range per leg (km)']=frame.pop('Range per leg (mi)')*1.609344
   frame['Payload mass (kg)']=frame.pop('Payload mass (lb)')*.45359237
-  frame['Total aircraft mass (kg)']=[mass_kg if x is not None else None for x in points]
+  frame['Total aircraft mass (kg)']=[x['result']['mass_lb']*.45359237 if x is not None else None for x in points]
   st.session_state['envelope_inputs']=envelope_inputs
-  st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'mass_lb':mass,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
+  st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'payload_kg':payload_kg,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
  saved=st.session_state['envelope_result']
- if not any(x is not None for x in saved['points']):st.warning('No payload/range combination closes this perched duration at the selected takeoff mass while preserving return energy.')
+ if not any(x is not None for x in saved['points']):st.warning('No aircraft/battery allocation closes this payload and perched duration within the engineering limits while preserving return energy.')
  chart_data=saved['frame'].copy()
  chart_data['Range per leg (mi)']=chart_data['Range per leg (km)']/1.609344
  chart_data['Payload mass (lb)']=chart_data['Payload mass (kg)']/.45359237
@@ -208,13 +207,22 @@ with mission_tab:
    'tooltip':[{'field':'Range per leg (km)','format':'.2f'},{'field':'Range per leg (mi)','format':'.2f'},{'field':field,'format':'.2f'},{'field':field.replace('(kg)','(lb)'),'format':'.2f'}]}})
  st.vega_lite_chart(chart_data,{'layer':layers,'resolve':{'scale':{'y':'independent'}},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
  st.caption('Payload uses the left axis, fixed at 0–3 kg (0–6.61 lb). Total aircraft mass uses the right axis. Both axes and range ticks show metric and imperial equivalents; values above 3 kg payload are clipped in this view and remain available in the CSV.')
- st.caption('Total aircraft mass is the selected flight-ready mass. Payload and battery trade within that fixed total; total mass includes both plus hardware and reserves. Only energy-feasible points are plotted.')
+ st.caption('Payload mass is held at the slider selection. Total aircraft mass changes with the battery required at each range. Only feasible points within the engineering limits are plotted.')
  st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
 
-try:
- r=size(**component_inputs,mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
-except ValueError as e: st.error(str(e)); st.stop()
+from payload_sizing import size_payload
+current=size_payload(payload_kg,distance,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
+if current is None:
+ if payload_kg<plan['sensor_kg']:st.error(f"Selected sensors require {plan['sensor_kg']:.3f} kg payload. Increase payload or reduce sensor selections.")
+ else:st.error('No aircraft/battery allocation closes this mission within the engineering limits. Adjust payload, range, perched schedule or engineering assumptions.')
+ st.stop()
+r=current['result'];mass=r['mass_lb'];mass_kg=mass*.45359237;fraction=current['Battery fraction']
+with mission_tab:
+ a,b,c=st.columns(3)
+ a.metric('Selected payload',f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb')
+ b.metric('Calculated total aircraft mass',f'{mass_kg:.3f} kg / {mass:.2f} lb')
+ c.metric('Calculated battery mass',f"{r['battery_kg']:.3f} kg")
 with mission_tab:
 
  a,b,c=st.columns(3)
@@ -246,7 +254,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'mission':{'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
@@ -280,7 +288,7 @@ with sizing_tab:
   point=next(x for x in feasible if abs(x['Range per leg (mi)']-point_range)<1e-9)
   target=point['result'].copy();target['additional_payload_kg']=point['Additional payload (kg)']
   target_plan=envelope['component_plan'];target_settings=envelope['component_settings'] | {'link_range_km':point_range*1.609344}
-  st.caption(f"Payload boundary: {point['Payload mass (lb)']*.45359237:.2f} kg total mission payload, {point_range*1.609344:g} km per leg, {envelope['settings']['selected_hours']:g} hours perched. Battery allocation is solved from remaining mass.")
+  st.caption(f"Payload boundary: {point['Payload mass (lb)']*.45359237:.2f} kg total mission payload, {point_range*1.609344:g} km per leg, {envelope['settings']['selected_hours']:g} hours perched. Battery and total aircraft mass are solved for the selected payload and mission.")
  try: calculated=derive(target,thrust_coefficient=ct,nominal_voltage=nominal_v)
  except ValueError as e: st.error(str(e)); st.stop()
  rows=[]
@@ -308,7 +316,7 @@ with sizing_tab:
  a.metric('Allocated BOM mass',f"{allocated['allocated_g']/1000:.3f} kg")
  b.metric('Flight-ready mass',f"{allocated['flight_ready_g']/1000:.3f} kg")
  c.metric('Remaining mass',f"{allocated['margin_g']:.1f} g")
- if not allocated['closed']:st.error('BOM exceeds the selected flight-ready mass. No viable complete BOM can be claimed.')
+ if not allocated['closed']:st.error('BOM exceeds the calculated flight-ready mass. No viable complete BOM can be claimed.')
  st.caption('Battery is allocated from mission mass fraction; propulsion/compute/comms/solar are split into explicit rows. Remaining mass is unused headroom already included in the flight-ready mass. Sensor power, logged rate and installation reserves are assumptions until replaced by measured product data. Per-row matches do not prove whole-system interoperability.')
  st.download_button('Download allocated BOM CSV',pd.DataFrame(table).to_csv(index=False),'allocated_bom.csv')
  st.download_button('Download BOM requirements JSON',json.dumps(metric_view({'sizing_for':selected,'plan':target_plan,'settings':target_settings,'bom':allocated}),indent=2),'bom_requirements.json')
