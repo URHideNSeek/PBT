@@ -1,12 +1,13 @@
 import json
+from metric_units import metric_view
 import pandas as pd
 import streamlit as st
 from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POINTS
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_mass':12.,'mission_range':.5,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
-PRESET_VERSION='least-mass-temperature-v2'
+STARTUP_PRESET={'mission_mass':5.44310844,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25)}
+PRESET_VERSION='least-mass-metric-v3'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
  st.session_state.pop('envelope_result',None)
@@ -17,9 +18,11 @@ if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
 with st.sidebar:
  st.header('Platform & mission')
  st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
- st.caption('Starting preset: 12 lb · 0.5 mile per leg · 1 hour on target.')
- mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,step=.1,key='mission_mass')
- distance=st.slider('Range per leg (statute miles)',0.,10.,step=.5,key='mission_range')
+ st.caption('Starting preset: 5.443 kg · 0.805 km per leg · 1 hour on target.')
+ mass_kg=st.slider('Flight-ready mass, including payload (kg)',3.6,9.1,step=.05,key='mission_mass',format='%.3f')
+ mass=mass_kg/.45359237
+ distance_km=st.slider('Range per leg (km)',0.,16.1,step=.1,key='mission_range',format='%.3f')
+ distance=distance_km/1.609344
  hours=st.slider('Perched time (hours)',1.,720.,step=1.,key='mission_hours')
  st.caption(f'{hours/24:.2f} days perched; maximum 30 days.')
  good=st.slider('Good solar days (%)',0,100,key='mission_solar')
@@ -103,7 +106,8 @@ with sizing_tab:
   navigation_g=a.number_input('Flight GNSS / compass allocation (g)',min_value=0.,value=60.)
   servo_qty=b.number_input('Mechanism actuator count',0,12,2)
   servo_g=c.number_input('Actuator mass each (g)',min_value=0.,value=30.)
-  servo_torque=a.number_input('Required actuator torque (kgf cm)',min_value=0.,value=5.)
+  servo_torque_nm=a.number_input('Required actuator torque (N m)',min_value=0.,value=.4903325)
+  servo_torque=servo_torque_nm/.0980665
   servo_v=b.number_input('Actuator supply (V)',min_value=1.,value=6.)
   bus_max=c.number_input('Maximum pack / bus voltage (V)',min_value=1.,value=29.4)
   current_margin=a.number_input('Current rating margin multiplier',min_value=1.,value=1.25)
@@ -135,8 +139,10 @@ with sizing_tab:
   sleep=st.number_input('Sleep-transition communication allowance per mission (Wh)',min_value=0.,value=1.)
   hop=distance
   st.caption('Relocation hop equals the initial insertion distance. An outward hop reserves a return from the next perch at twice the insertion distance.')
-  wind=st.slider('Steady wind (kt)',0.,30.,20.)
-  speed=st.slider('True cruise airspeed (kt)',10.,60.,35.)
+  wind_ms=st.slider('Steady wind (m/s)',0.,15.5,10.2888888889,step=.1)
+  wind=wind_ms/.514444444444
+  speed_ms=st.slider('True cruise airspeed (m/s)',5.,31.,18.0055555556,step=.1)
+  speed=speed_ms/.514444444444
   whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
   age_factor=st.slider('Aging/other capacity factor',.1,1.,.9,.05)
   derate=age_factor*temperature_factor
@@ -177,13 +183,15 @@ with mission_tab:
   points=payload_curve(hours,mass_lb=mass,nonbattery_kg=fixed_nonbattery,**model_inputs)
   data=[{k:v for k,v in x.items() if k!='result'} if x else {'Range per leg (mi)':i*.25,'Payload mass (lb)':None,'Additional payload (kg)':None,'Battery fraction':None} for i,x in enumerate(points)]
   frame=pd.DataFrame(data)
-  frame['Total aircraft mass (lb)']=[mass if x is not None else None for x in points]
+  frame['Range per leg (km)']=frame.pop('Range per leg (mi)')*1.609344
+  frame['Payload mass (kg)']=frame.pop('Payload mass (lb)')*.45359237
+  frame['Total aircraft mass (kg)']=[mass_kg if x is not None else None for x in points]
   st.session_state['envelope_inputs']=envelope_inputs
   st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'mass_lb':mass,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
  saved=st.session_state['envelope_result']
  if not any(x is not None for x in saved['points']):st.warning('No payload/range combination closes this perched duration at the selected takeoff mass while preserving return energy.')
- chart_data=saved['frame'].melt(id_vars='Range per leg (mi)',value_vars=['Payload mass (lb)','Total aircraft mass (lb)'],var_name='Mass type',value_name='Mass (lb)')
- st.vega_lite_chart(chart_data,{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (mi)','type':'quantitative','title':'Initial hop / return range (statute miles)'},'y':{'field':'Mass (lb)','type':'quantitative','scale':{'zero':True}},'color':{'field':'Mass type','type':'nominal','sort':['Payload mass (lb)','Total aircraft mass (lb)'],'legend':{'orient':'bottom','title':None,'columns':2,'labelLimit':250}},'tooltip':[{'field':'Range per leg (mi)'},{'field':'Mass type'},{'field':'Mass (lb)'}]},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
+ chart_data=saved['frame'].melt(id_vars='Range per leg (km)',value_vars=['Payload mass (kg)','Total aircraft mass (kg)'],var_name='Mass type',value_name='Mass (kg)')
+ st.vega_lite_chart(chart_data,{'mark':{'type':'line','point':True},'encoding':{'x':{'field':'Range per leg (km)','type':'quantitative','title':'Initial hop / return range (km)'},'y':{'field':'Mass (kg)','type':'quantitative','scale':{'zero':True}},'color':{'field':'Mass type','type':'nominal','sort':['Payload mass (kg)','Total aircraft mass (kg)'],'legend':{'orient':'bottom','title':None,'columns':2,'labelLimit':250}},'tooltip':[{'field':'Range per leg (km)'},{'field':'Mass type'},{'field':'Mass (kg)'}]},'config':{'legend':{'layout':{'bottom':{'anchor':'middle'}}}}},width='stretch')
  st.caption('Total aircraft mass is the selected flight-ready mass. Payload and battery trade within that fixed total; total mass includes both plus hardware and reserves. Only energy-feasible points are plotted.')
  st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete that mission while preserving return energy. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
@@ -210,7 +218,7 @@ with mission_tab:
  wait=r['relocation_charge_h']
  if wait is None:st.warning('Relocation cannot become energy-ready under the selected battery capacity, solar mix and continuing sensor/communications schedule.')
  else:st.metric('Recharge time needed for relocation',f'{wait:.1f} hours',help='Calculated after the selected perched duration; return energy remains protected.')
- st.caption(f'Relocation: {distance:g} miles. Protected return from the new perch: {2*distance:g} miles, plus landing reserve. Recharge uses net solar after ongoing stationary loads. Zero means no additional charging wait is required.')
+ st.caption(f'Relocation: {distance_km:g} km. Protected return from the new perch: {2*distance_km:g} km, plus landing reserve. Recharge uses net solar after ongoing stationary loads. Zero means no additional charging wait is required.')
  if not r['return_reserve_preserved']:
   st.error('The requested perched duration would consume protected return energy. The aircraft must recover or reduce activity before reaching that limit.')
   if r['maximum_protected_perched_hours'] is not None:st.write(f"Maximum perched duration before the return-energy limit: {r['maximum_protected_perched_hours']:.1f} hours under the average-solar model.")
@@ -226,10 +234,10 @@ with mission_tab:
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
-  frame=pd.DataFrame([{'Trade':x['name'],**x['mission'],'Required battery Wh':x['results']['required_nominal_average_solar_wh'],'Recharge time needed for relocation h':x['results'].get('relocation_charge_h')} for x in st.session_state.mission_scenarios]).set_index('Trade')
+  frame=pd.DataFrame([{'Trade':x['name'],**metric_view(x['mission']),'Required battery Wh':x['results']['required_nominal_average_solar_wh'],'Recharge time needed for relocation h':x['results'].get('relocation_charge_h')} for x in st.session_state.mission_scenarios]).set_index('Trade')
   st.dataframe(frame.T,width='stretch')
   st.download_button('Download mission comparison CSV',frame.to_csv(),file_name='mission_trades.csv')
- st.download_button('Download current mission and engineering assumptions',json.dumps(record,indent=2),file_name='mission_trade.json')
+ st.download_button('Download current mission and engineering assumptions',json.dumps(metric_view(record),indent=2),file_name='mission_trade.json')
 
 with sizing_tab:
  from sizing import derive
@@ -252,17 +260,17 @@ with sizing_tab:
   envelope=st.session_state['envelope_result']
   feasible=[x for x in envelope['points'] if x is not None]
   if not feasible:st.warning('No feasible payload envelope point for this perched duration.');st.stop()
-  point_range=st.selectbox('Envelope range per leg (mi)',[x['Range per leg (mi)'] for x in feasible])
-  point=next(x for x in feasible if x['Range per leg (mi)']==point_range)
+  point_range=st.selectbox('Envelope range per leg (km)',[x['Range per leg (mi)']*1.609344 for x in feasible])/1.609344
+  point=next(x for x in feasible if abs(x['Range per leg (mi)']-point_range)<1e-9)
   target=point['result'].copy();target['additional_payload_kg']=point['Additional payload (kg)']
   target_plan=envelope['component_plan'];target_settings=envelope['component_settings'] | {'link_range_km':point_range*1.609344}
-  st.caption(f"Payload boundary: {point['Payload mass (lb)']:.2f} lb total mission payload, {point_range:g} miles per leg, {envelope['settings']['selected_hours']:g} hours perched. Battery allocation is solved from remaining mass.")
+  st.caption(f"Payload boundary: {point['Payload mass (lb)']*.45359237:.2f} kg total mission payload, {point_range*1.609344:g} km per leg, {envelope['settings']['selected_hours']:g} hours perched. Battery allocation is solved from remaining mass.")
  try: calculated=derive(target,thrust_coefficient=ct,nominal_voltage=nominal_v)
  except ValueError as e: st.error(str(e)); st.stop()
  rows=[]
- for key,value in calculated.items():
+ for key,value in metric_view(calculated).items():
   basis='Assumption' if key.startswith('assumed_') else 'Propeller-model estimate' if 'rpm' in key or 'tip_speed' in key else 'Derived sizing / allocation'
-  units={'_lb_ft2':'lb/ft²','_kg_m2':'kg/m²','_N_m2':'N/m²','_wh_day':'Wh/day','_m_s':'m/s','_wkg':'W/kg','_whkg':'Wh/kg','_kgf':'kgf','_rpm':'RPM','_m2':'m²','_kg':'kg','_lb':'lb','_wh':'Wh','_ah':'Ah','_in':'in','_w':'W','_a':'A','_v':'V','_g':'g'}
+  units={'_nm':'N m','_mm':'mm','_n':'N','_kg_m2':'kg/m²','_N_m2':'N/m²','_wh_day':'Wh/day','_m_s':'m/s','_wkg':'W/kg','_whkg':'Wh/kg','_rpm':'RPM','_m2':'m²','_kg':'kg','_wh':'Wh','_ah':'Ah','_w':'W','_a':'A','_v':'V','_g':'g'}
   suffix=next((x for x in units if key.endswith(x)),None)
   label=key[:-len(suffix)] if suffix else key
   if key=='required_pack_ah_average_solar': label='Required pack capacity (average solar)'; suffix='_ah'
@@ -273,12 +281,12 @@ with sizing_tab:
  st.warning('RPM uses T = CT × air density × (RPM/60)² × diameter⁴. CT is an assumed static thrust coefficient. This is not measured motor performance or a blade/hub rating, and it does not predict cruise RPM. Confirm with matched motor/ESC/prop curves.')
  st.caption('Pack Ah uses nominal voltage; current uses minimum loaded voltage. Required pack mass is compared with the allocated mass at the selected aircraft weight; adding battery changes aircraft mass and requires a new trade. Peak assembly W is electrical input, not motor shaft power.')
  st.download_button('Download engineering sizing CSV',frame.to_csv(index=False),file_name='engineering_sizing.csv')
- st.download_button('Download engineering sizing JSON',json.dumps({'mission':target,'sizing':calculated,'status':'Derived estimates, not approved requirements'},indent=2),file_name='engineering_sizing.json')
+ st.download_button('Download engineering sizing JSON',json.dumps(metric_view({'mission':target,'sizing':calculated,'status':'Derived estimates, not approved requirements'}),indent=2),file_name='engineering_sizing.json')
 
 with sizing_tab:
  st.subheader('Allocated bill of materials')
  allocated=bom(target,calculated,target_plan,target_settings)
- table=[{'Component':x['component'],'Quantity':x['quantity'],'Mass each (g)':round(x['mass_each_g'],2),'Mass row (g)':round(x['mass_total_g'],2),'Selection parameters':'; '.join(f"{k} {v['op']} {v['value']}" for k,v in x['requirements'].items()),'Needs definition / verification':'; '.join(x['open_requirements'])} for x in allocated['rows']]
+ table=[{'Component':x['component'],'Quantity':x['quantity'],'Mass each (g)':round(x['mass_each_g'],2),'Mass row (g)':round(x['mass_total_g'],2),'Selection parameters':'; '.join(f"{k} {v['op']} {v['value']}" for k,v in metric_view(x['requirements']).items()),'Needs definition / verification':'; '.join(x['open_requirements'])} for x in allocated['rows']]
  st.dataframe(pd.DataFrame(table),hide_index=True,width='stretch')
  a,b,c=st.columns(3)
  a.metric('Allocated BOM mass',f"{allocated['allocated_g']/1000:.3f} kg")
@@ -287,7 +295,7 @@ with sizing_tab:
  if not allocated['closed']:st.error('BOM exceeds the selected flight-ready mass. No viable complete BOM can be claimed.')
  st.caption('Battery is allocated from mission mass fraction; propulsion/compute/comms/solar are split into explicit rows. Remaining mass is unused headroom already included in the flight-ready mass. Sensor power, logged rate and installation reserves are assumptions until replaced by measured product data. Per-row matches do not prove whole-system interoperability.')
  st.download_button('Download allocated BOM CSV',pd.DataFrame(table).to_csv(index=False),'allocated_bom.csv')
- st.download_button('Download BOM requirements JSON',json.dumps({'sizing_for':selected,'plan':target_plan,'settings':target_settings,'bom':allocated},indent=2),'bom_requirements.json')
+ st.download_button('Download BOM requirements JSON',json.dumps(metric_view({'sizing_for':selected,'plan':target_plan,'settings':target_settings,'bom':allocated}),indent=2),'bom_requirements.json')
 with bom_tab:
  st.subheader('BOM Options')
  sourcing=st.selectbox('Component sourcing',['NDAA + Blue UAS evidence required','Unrestricted sourcing'])
@@ -300,10 +308,10 @@ with bom_tab:
  for item in matches:
   if not item['row']['sourcing']:continue
   with st.expander(item['row']['component']+' · '+item['status']):
-   st.write('**Requirements**');st.json(item['row']['requirements'])
+   st.write('**Requirements**');st.json(metric_view(item['row']['requirements']))
    if item['row']['open_requirements']:st.write('**Still to define / verify:** '+'; '.join(item['row']['open_requirements']))
    for product in item['options']:
-    st.markdown('**'+product['name']+'**');st.link_button('Manufacturer evidence',product['source_url']);st.json(product['attributes']);st.caption(product.get('notes',''))
+    st.markdown('**'+product['name']+'**');st.link_button('Manufacturer evidence',product['source_url']);st.json(metric_view(product['attributes']));st.caption(product.get('notes',''))
     st.caption('NDAA evidence: '+str(product.get('ndaa_source_url') or 'Not established')+' · Blue evidence: '+str(product.get('blue_source_url') or 'Not established'))
    if not item['options']:st.write('No product with complete evidence meets this row under the active constraints.')
    for entry in item['rejected']:
@@ -313,4 +321,4 @@ with bom_tab:
  count=sum(bool(x['options']) for x in matches if x['row']['sourcing']);needed=sum(x['row']['sourcing'] for x in matches)
  st.metric('COTS rows with at least one specification match',f'{count} / {needed}')
  st.caption('Zero means no evidenced match in this catalog under the active requirements, not proof that no product exists. Missing requirements and specifications are listed under each row.')
- st.download_button('Download BOM option evidence',json.dumps({'sourcing':sourcing,'sizing_for':selected,'mass_closed':allocated['closed'],'matches':matches},indent=2),'bom_options.json')
+ st.download_button('Download BOM option evidence',json.dumps(metric_view({'sourcing':sourcing,'sizing_for':selected,'mass_closed':allocated['closed'],'matches':matches}),indent=2),'bom_options.json')
