@@ -1,101 +1,66 @@
 import json
 import pandas as pd
 import streamlit as st
-from model import F, DEFAULTS, MASS, validate, evaluate
-st.set_page_config(page_title='Pigeon Bot Trade Engine',page_icon='🕊️',layout='wide')
-st.title('Pigeon Bot · Trade Engine')
-st.caption('Aircraft + unattended perched sensor · performance sizing before parts selection')
-st.info('All defaults are assumptions. PASS means preliminary model closure; packaging, perch strength, motor/ESC limits and sensor effectiveness remain unmodeled.')
-if 'scenarios' not in st.session_state: st.session_state.scenarios=[]
+from mission import size
+st.set_page_config(page_title='Pigeon Bot Mission Trades',page_icon='🕊️',layout='wide')
+st.title('Pigeon Bot · Mission Trades')
+st.caption('Choose the capability to offer. See what engineering must achieve.')
 with st.sidebar:
- st.header('Design parameters')
- uploaded=st.file_uploader('Import individual scenario JSON',type=['json'])
- if st.button('Load imported scenario',disabled=uploaded is None):
-  try:
-   s=json.load(uploaded)
-   if s.get('schema_version')!=1: raise ValueError('Unsupported schema version')
-   validate(s['parameters'])
-   for k,v in s['parameters'].items(): st.session_state[k]=float(v)
-   st.session_state['name']=str(s.get('name','Imported'))
-   st.success('Loaded')
-  except (ValueError,TypeError,KeyError) as e: st.error(str(e))
- if st.button('Reset design exercise'):
-  for k,v in DEFAULTS.items(): st.session_state[k]=v
- p={}
- for group in ['Limits','Mass','Battery','Flight','Mission','Station','Solar','Data','Thermal']:
-  with st.expander(group,expanded=group=='Mission'):
-   for k,(label,value,lo,hi,g) in F.items():
-    if group==g:
-     if k not in st.session_state: st.session_state[k]=value
-     p[k]=st.number_input(label,min_value=lo,max_value=hi,key=k,format='%.3f')
-try: r=evaluate(p)
+ st.header('Platform & mission')
+ mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,19.5,.1)
+ distance=st.slider('Range per leg (statute miles)',.5,15.,6.,.5)
+ hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=6.)
+ good=st.slider('Good solar days (%)',0,100,50)
+ st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
+ deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=24.)
+ checkins=st.slider('Scheduled communications check-ins per day',0,48,4)
+ if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
+ tier2=st.slider('Tier 2 active minutes per day',0,1440,40)
+ with st.expander('Advanced engineering assumptions'):
+  fraction=st.slider('Battery fraction of flight-ready mass (%)',20,75,50)/100
+  good_wh=st.number_input('Battery-delivered harvest on good day (Wh)',min_value=0.,value=90.)
+  bad_wh=st.number_input('Battery-delivered harvest on bad day (Wh)',min_value=0.,value=15.)
+  t1=st.number_input('Average Tier 1 + housekeeping power (W)',min_value=0.,value=5.)
+  t2=st.number_input('Incremental Tier 2 power (W)',min_value=0.,value=40.)
+  radio=st.number_input('Active communications power (W)',min_value=0.,value=60.)
+  duration=st.number_input('Minutes per scheduled check-in',min_value=0.,value=1.)
+  events=st.number_input('Anomaly reports per day',min_value=0.,value=2.)
+  event_duration=st.number_input('Minutes per anomaly report',min_value=0.,value=1.)
+  sleep=st.number_input('Sleep-transition communication allowance per mission (Wh)',min_value=0.,value=1.)
+  hop=st.number_input('Reposition distance (statute miles)',min_value=0.,value=1.)
+  wind=st.slider('Steady wind (kt)',0.,30.,20.)
+  speed=st.slider('True cruise airspeed (kt)',10.,60.,35.)
+  whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
+  derate=st.slider('Temperature/aging capacity factor',.1,1.,.9,.05)
+  thermal_unused=st.caption('Detailed flight/prop/solar assumptions remain in advanced_app.py. This mission view is an inverse sizing study, not full feasibility verification.')
+try:
+ r=size(mass_lb=mass,range_mi=distance,days=hours/24,good_pct=good,checkins=checkins,tier2_min_day=tier2,battery_fraction=fraction,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=radio,reposition_mi=hop,wind=wind,speed=speed,whkg=whkg,derate=derate)
 except ValueError as e: st.error(str(e)); st.stop()
-a,b,c,d=st.columns(4)
-a.metric('Aircraft mass',f"{r['mass_lb']:.2f} lb")
-b.metric('Nominal / usable energy',f"{r['nominal_wh']:.0f} / {r['usable_wh']:.0f} Wh")
-c.metric('Mission energy margin',f"{r['margin_wh']:.0f} Wh" if r['margin_wh'] is not None else 'Infeasible route')
-d.metric('Calculated checks',f"{sum(r['checks'].values())} / {len(r['checks'])}")
-tabs=st.tabs(['Mission & closure','Trade matrix','Sensitivity','Model & assumptions'])
-with tabs[0]:
- left,right=st.columns([2,1])
- with left:
-  if r['trace']:
-   st.subheader('Energy during Persist')
-   st.line_chart(pd.DataFrame(r['trace']).set_index('Station hour'))
-   st.caption('Recovery protection includes return energy, reserve and SOC floor. Solar is normalized across 06:00–18:00. Activity is spread uniformly; real early activity may lower minimum energy.')
-  values=[{'Metric':k.replace('_',' '),'Value':None if v is None else round(v,2)} for k,v in r.items() if k not in ['checks','trace']]
-  st.dataframe(pd.DataFrame(values),hide_index=True,width='stretch')
- with right:
-  st.subheader('Closure checks')
-  st.dataframe(pd.DataFrame([{'Check':k,'Status':'PASS' if v else 'FAIL'} for k,v in r['checks'].items()]),hide_index=True,width='stretch')
-  st.bar_chart(pd.DataFrame({'kg':{F[k][0]:p[k] for k in MASS}}))
-with tabs[1]:
- name=st.text_input('Scenario name',value='Design exercise',key='name')
- current={'schema_version':1,'name':name,'parameters':p.copy(),'basis':'Assumed / user-entered'}
- if st.button('Save to comparison matrix'):
-  st.session_state.scenarios=[s for s in st.session_state.scenarios if s['name']!=name]+[current]
- st.caption('Same-name saves replace the existing row. Download JSON to preserve session-local scenarios.')
- st.download_button('Download current scenario JSON',json.dumps(current,indent=2),file_name='pigeon_scenario.json')
- rows=[]
- for s in st.session_state.scenarios:
-  q=evaluate(s['parameters'])
-  rows.append({'Scenario':s['name'],**{k:q[k] for k in ['mass_lb','nominal_wh','flight_w','station_wh','solar_daily_wh','margin_wh']},'Checks passed':sum(q['checks'].values()),'All calculated checks pass':all(q['checks'].values())})
- if rows:
-  frame=pd.DataFrame(rows).set_index('Scenario'); st.dataframe(frame.T,width='stretch')
-  st.download_button('Download matrix CSV',frame.to_csv(),file_name='trade_matrix.csv')
-  st.download_button('Download scenario bundle',json.dumps(st.session_state.scenarios,indent=2),file_name='pigeon_scenarios.json')
-  if st.button('Clear matrix'): st.session_state.scenarios=[]; st.rerun()
- else: st.info('Save multiple designs to compare them here.')
-with tabs[2]:
- key=st.selectbox('Sweep parameter',list(F),format_func=lambda k:F[k][0])
- lo=st.number_input('Sweep minimum',value=float(max(F[key][2],p[key]*.8)))
- hi=st.number_input('Sweep maximum',value=float(min(F[key][3],p[key]*1.2)))
- rows=[]
- if hi>=lo:
-  for i in range(21):
-   value=lo+(hi-lo)*i/20
-   if key=='rotors': value=float(round(value))
-   try:
-    q=evaluate(p | {key:value})
-    rows.append({'Parameter':value,'Energy margin Wh':q['margin_wh'],'Mass lb':q['mass_lb'],'Flight W':q['flight_w'],'Checks passed':sum(q['checks'].values())})
-   except ValueError: pass
- if rows:
-  frame=pd.DataFrame(rows).drop_duplicates('Parameter').set_index('Parameter')
-  st.line_chart(frame[['Energy margin Wh']]); st.dataframe(frame,width='stretch')
-  st.download_button('Download sensitivity CSV',frame.to_csv(),file_name='sensitivity.csv')
- else: st.warning('No valid configurations in this sweep')
-with tabs[3]:
- st.markdown('''### Model basis
-- Installed mass includes growth. Battery nominal Wh = installed kg × installed Wh/kg.
-- Capacity derating and the initial-to-minimum SOC window determine available Wh. The Wh reserve is added once.
-- Hover power = weight^(3/2) / sqrt(2 × density × total rotor area), divided by assumed overall efficiency.
-- Cruise is a reference-calibrated sensitivity model: nondrag power scales with mass^(3/2)/diameter; drag power scales with CdA × airspeed³. It is not a validated forward-flight rotor model.
-- A single steady wind vector applies to reciprocal legs. Crosswind requires crab; impossible track or nonpositive ground speed fails.
-- Solar uses active area, cell/charger efficiency, shading and equivalent sunlight. A flat 12-hour daylight profile is simulated at five-minute resolution. Harvest above battery capacity is discarded.
-- Tier 2 and radio power are incremental above shared and Tier 1 loads; they may overlap. Extra activity is distributed uniformly. No automatic shutdown or ACK policy is modeled.
-- Station thermal is a conservative steady peak estimate treating active loads as internal heat. Transient cooling is not modeled.
-
-### Additional engineering needed
-Folding/packaging/CG, perch and gust loads, motor/ESC voltage and thermal limits, battery sag, sensor detection performance, RF link budgets, detailed activity scheduling and weather profiles. RPM and acoustic predictions require data and are not fabricated. There is no procurement model.
-''')
- st.dataframe(pd.DataFrame([{'Parameter':F[k][0],'Value':v,'Basis':'Assumed / user-entered'} for k,v in p.items()]),hide_index=True,width='stretch')
+a,b,c=st.columns(3)
+a.metric('Required nominal battery · no solar credit',f"{r['required_nominal_no_solar_wh']:.0f} Wh")
+b.metric('Required battery · average solar credit',f"{r['required_nominal_average_solar_wh']:.0f} Wh")
+c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
+st.subheader('Design specifications engineering must meet')
+rows=[('Installed battery mass allocation',r['battery_kg'],'kg'),('Nonbattery mass allocation',r['nonbattery_kg'],'kg'),('Required installed battery specific energy with average solar',r['required_installed_whkg'],'Wh/kg'),('Continuous thrust required per rotor',r['thrust_per_rotor_kgf'],'kgf'),('Estimated hover power',r['hover_w'],'W'),('Estimated cruise power',r['flight_w'],'W'),('Estimated maneuver electrical power',r['peak_w'],'W'),('Station consumption',r['station_wh_day'],'Wh/day'),('Average solar harvest',r['solar_wh_day'],'Wh/day'),('Good-day harvest needed for energy-neutral station operation',r['required_energy_neutral_good_day_wh'],'Wh/day'),('Scheduled + anomaly communications duration',r['comms_min_day'],'min/day')]
+st.dataframe(pd.DataFrame([{'Specification':k,'Value':'Not attainable with this weather mix' if v is None else round(v,2),'Units':u} for k,v,u in rows]),hide_index=True,width='stretch')
+st.subheader('Ready to move?')
+for label,key in [('Recover to operator','recovery_charge_h'),('Reposition to next perch','reposition_charge_h')]:
+ v=r[key]
+ if v is None: st.warning(label+': cannot recharge to readiness under the assumed battery capacity and continuing station schedule.')
+ else:
+  st.write(f'**{label}: {v:.1f} hours recharge** after the selected time on target.')
+  if v>deadline: st.warning(f'Exceeds the {deadline:g}-hour desired recharge time.')
+st.caption('Recharge uses average net solar after continuing sensing/communications loads. Zero means energy-ready, not departure clearance. Negative daily balance can be tolerated for a finite mission but is not indefinite persistence.')
+if r['energy_margin_average_wh']<0: st.error(f"Assumed battery misses the average-solar mission by {-r['energy_margin_average_wh']:.0f} Wh.")
+else: st.success(f"Average-solar energy margin: {r['energy_margin_average_wh']:.0f} Wh. Weather sequencing and other closure checks still require review.")
+st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
+if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
+name=st.text_input('Trade name','Mission concept')
+record={'name':name,'mission':{'mass_lb':mass,'range_mi':distance,'hours':hours,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'desired_recharge_h':deadline,'battery_fraction':fraction,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering']}
+if st.button('Save mission to comparison'):
+ st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
+if st.session_state.mission_scenarios:
+ frame=pd.DataFrame([{'Trade':x['name'],**x['mission'],'Required battery Wh':x['results']['required_nominal_average_solar_wh'],'Recovery recharge h':x['results']['recovery_charge_h'],'Reposition recharge h':x['results']['reposition_charge_h']} for x in st.session_state.mission_scenarios]).set_index('Trade')
+ st.dataframe(frame.T,width='stretch')
+ st.download_button('Download mission comparison CSV',frame.to_csv(),file_name='mission_trades.csv')
+st.download_button('Download current mission and engineering assumptions',json.dumps(record,indent=2),file_name='mission_trade.json')
