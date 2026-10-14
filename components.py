@@ -18,28 +18,39 @@ SENSORS={
  'radar':('Passive radar receiver',400.,10.,.1,10.,'USB'),
 }
 
-REQUIRED_FLIGHT_PERCH_SENSORS=(
- ('IMU — accelerometer and gyroscope','Flight controller; attitude/control'),
- ('Magnetometer / compass','GNSS/compass module; heading'),
- ('Barometer','Flight controller; altitude estimate'),
- ('GNSS receiver','Flight GNSS/compass module; route navigation'),
- ('Navigation / perch camera','Navigation camera allocation; pole alignment'),
- ('Short-range distance sensor','Dedicated 20 g allocation; approach clearance'),
- ('Perch contact sensor','Dedicated 5 g allocation; physical contact'),
- ('Grip / latch position sensor','Dedicated 5 g allocation; secured-state feedback'),
- ('Battery voltage, current and temperature sensing','Battery/BMS allocation; departure and power protection'),
-)
+REQUIRED_SENSOR_HOSTS={
+ 'imu':'FCS','compass':'GPS','pressure':'FCS','gnss':'GPS','visible':'NAVCAM',
+ 'range':'PRNG','contact':'PCT','latch':'LCK','battery_health':'BAT',
+}
+# Required devices' mass is already in their host BOM row. Host electronics power
+# is covered by the controller/GNSS/BMS baseline; camera/range idle and mission
+# activation are separately accounted below.
+SENSORS={
+ 'imu':('IMU — accelerometer / gyroscope',0.,0.,0.,.006,'UART'),
+ 'compass':('Magnetometer / compass',0.,0.,0.,.001,'UART'),
+ 'pressure':('Barometer',0.,0.,0.,.00001,'UART'),
+ 'gnss':('Flight GNSS receiver',0.,0.,0.,.001,'CAN'),
+ 'visible':('Navigation / perch camera',0.,1.5,.02,2.,'USB'),
+ 'range':('Perch distance sensor',0.,.5,.01,.002,'UART'),
+ 'contact':('Perch contact sensor',0.,.01,.005,.00001,'GPIO'),
+ 'latch':('Grip / latch position sensor',0.,.01,.005,.00001,'GPIO'),
+ 'battery_health':('Battery voltage / current / temperature',0.,0.,0.,.00001,'UART'),
+ **{k:v for k,v in SENSORS.items() if k not in REQUIRED_SENSOR_HOSTS},
+}
+
 FIXED_PERCH_SENSOR_G=30.
 FIXED_PERCH_SENSOR_SLEEP_W=.02
 
 def sensor_plan(tier1,tier2,profiles,duty,tier2_min_day,base_w):
  if not 0<=duty<=1 or not 0<=tier2_min_day<=1440 or base_w<0:raise ValueError('Invalid sensor duty or base power')
  t2_fraction=tier2_min_day/1440
- keys=list(dict.fromkeys([*tier1,*tier2]));devices=[]
+ keys=list(dict.fromkeys([*[k for k in REQUIRED_SENSOR_HOSTS if k in profiles],*tier1,*tier2]));devices=[]
  baseline=base_w;increment=0.;daily_gb=0.;mass=0.
  for key in keys:
   if key not in SENSORS:raise ValueError('Unknown sensor selection')
   p=profiles[key].copy();q=p['quantity']
+  if key in REQUIRED_SENSOR_HOSTS:
+   p['mass_g']=0.;p['quantity']=1;q=1
   if isinstance(q,bool) or int(q)!=q or q<1:raise ValueError('Sensor quantities must be positive integers')
   for name in ['mass_g','active_w','sleep_w','logged_mbps','supply_v']:
    if not isfinite(p[name]) or p[name]<0:raise ValueError('Invalid sensor allocation: '+name)
@@ -51,7 +62,7 @@ def sensor_plan(tier1,tier2,profiles,duty,tier2_min_day,base_w):
   active_fraction=(duty if in1 else 0)+(1-(duty if in1 else 0))*t2_fraction*in2
   baseline+=q*b;increment+=q*extra;mass+=q*p['mass_g']
   gb=q*p['logged_mbps']*86400/8000*active_fraction;daily_gb+=gb
-  devices.append({'key':key,'name':SENSORS[key][0],**p,'tier1':in1,'tier2':in2,'active_fraction':active_fraction,'daily_gb':gb})
+  devices.append({'key':key,'name':SENSORS[key][0],'required_flight_perch':key in REQUIRED_SENSOR_HOSTS,**p,'tier1':in1,'tier2':in2,'active_fraction':active_fraction,'daily_gb':gb})
  return {'devices':devices,'sensor_kg':mass/1000,'tier1_w':baseline,'tier2_w':increment,'daily_gb':daily_gb,'tier1_duty':duty,'tier2_min_day':tier2_min_day,'base_w':base_w,'status':'Provisional sensor allocations'}
 
 def constraint(op,value):return {'op':op,'value':value}
@@ -92,7 +103,7 @@ def bom(result,sizing,plan,settings):
   'pwm_outputs':constraint('>=',int(g)+settings['servo_qty']),'protocols':constraint('contains_any',['PX4','ArduPilot']),
   'interfaces':constraint('contains_all',['UART','CAN']),
   'accelerometer':constraint('==',True),'gyroscope':constraint('==',True),'barometer':constraint('==',True)})
- interfaces=sorted(set(d['interface'] for d in plan['devices']))
+ interfaces=sorted(set(['UART','USB']+[d['interface'] for d in plan['devices'] if d['key'] not in REQUIRED_SENSOR_HOSTS]))
  add('CMP','Payload computer','compute',1,comp_g*.65,{**rail(5.),'active_w':constraint('<=',settings['compute_w']),
   'ram_gb':constraint('>=',settings['ram_gb']),'interfaces':constraint('contains_all',interfaces)},['Processing throughput for selected sensors needs benchmark evidence'])
  storage=max(.1,plan['daily_gb']*settings['retention_days']*1.25)
@@ -133,6 +144,17 @@ def bom(result,sizing,plan,settings):
   lower={'pixels_x','pixels_y','fps','update_hz','lux_max','sample_khz','channels','snr_db','accel_range_g','bandwidth_hz','range_m','sample_hz','rf_max_mhz','rf_bandwidth_mhz','coherent_channels'}
   upper={'accuracy_m','temp_accuracy_c','humidity_accuracy_pct','pressure_min_hpa','pressure_accuracy_pa','range_accuracy_cm','rf_min_mhz'}
   for k,v in d['performance'].items():req[k]=constraint('>=' if k in lower or k=='pressure_max_hpa' else '<=' if k in upper else '==',v)
+  if d['key'] in REQUIRED_SENSOR_HOSTS:
+   host=next(x for x in rows if x['id']==REQUIRED_SENSOR_HOSTS[d['key']])
+   # Reuse installed hardware; merge measurement constraints into its host row.
+   for k in d['performance']:
+    if k in host['requirements']:
+     old=host['requirements'][k];new=req[k]
+     if old['op']==new['op'] and new['op'] in ['>=','<=']:
+      new['value']=(max if new['op']=='>=' else min)(old['value'],new['value'])
+    host['requirements'][k]=req[k]
+   host['open_requirements']=list(dict.fromkeys(host['open_requirements']+d['open_requirements']))
+   continue
   add('SEN-'+d['key'],d['name']+' sensor ('+'/'.join(x for x,on in [('Tier 1',d['tier1']),('Tier 2',d['tier2'])] if on)+')',d['key'],d['quantity'],d['quantity']*d['mass_g'],req,d['open_requirements'])
  for id,name,k in [('STR','Structure / enclosure / mounting','structure_g'),('WIR','Wires / connectors reserve','wires_g'),('FST','Fasteners reserve','fasteners_g'),('SEA','Sealants / adhesives reserve','sealants_g'),('GRO','Growth reserve','growth_g')]:
   add(id,name,'reserve',1,settings[k]*(.65 if id=='STR' else 1),sourcing=False)
