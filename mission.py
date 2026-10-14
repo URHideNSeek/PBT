@@ -47,19 +47,23 @@ def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day
  insertion_ok=arrival_energy>=floor
  station_ok=insertion_ok and minimum>=floor
  recovery_required=retrieval+p['reserve']+floor
+ return_protected=insertion_ok and minimum>=recovery_required
  margin=end_energy-recovery_required
- mission_ok=station_ok and margin>=0
- required_average=max((insertion+wake_wh)/window,
+ mission_ok=station_ok and return_protected and margin>=0
+ required_average=max((insertion+wake_wh+retrieval+p['reserve'])/window,
                       (energy_needed-solar_credit)/window,
                       (retrieval+p['reserve'])/(p['derate']*(1-p['floor']/100)))
  # Reposition follows the outbound track under the same steady wind.
- reposition_required=r['flight_w']*reposition_mi/1.150779/r['outbound_ground_kt']+auxiliary+p['reserve']+floor
+ relocation_wh=r['flight_w']*reposition_mi/1.150779/r['outbound_ground_kt']+auxiliary
+ next_return_wh=r['flight_w']*(range_mi+reposition_mi)/1.150779/r['return_ground_kt']+auxiliary/2
+ reposition_required=relocation_wh+next_return_wh+p['reserve']+floor
  def recharge(target):
-  if not station_ok or target>capacity: return None
+  if not return_protected or target>capacity: return None
   deficit=max(0.,target-end_energy)
   if deficit==0: return 0.
   return deficit/net*24 if net>0 else None
- return dict(insertion_energy_feasible=insertion_ok,station_energy_feasible=station_ok,mission_energy_feasible=mission_ok,battery_capacity_wh=capacity,arrival_energy_wh=arrival_energy,minimum_station_energy_wh=minimum,end_station_energy_wh=end_energy,spilled_solar_wh=spilled,recovery_required_wh=recovery_required,solar_credit_wh=solar_credit,station_energy_wh=station_energy,insertion_wh=insertion,retrieval_wh=retrieval,mass_lb=mass_lb,battery_kg=p['battery_kg'],nonbattery_kg=m-p['battery_kg'],required_nominal_no_solar_wh=required_no_solar,required_nominal_average_solar_wh=required_average,required_installed_whkg=required_average/p['battery_kg'],station_wh_day=daily_load,solar_wh_day=weather_solar,daily_balance_wh=net,energy_margin_average_wh=margin,recovery_charge_h=recharge(recovery_required),reposition_charge_h=recharge(reposition_required),required_energy_neutral_good_day_wh=(daily_load-(1-good_pct/100)*bad_wh)/(good_pct/100) if good_pct else None,flight_w=r['flight_w'],hover_w=r['hover_w'],thrust_per_rotor_kgf=r['thrust_required_kgf'],peak_w=r['peak_w'],comms_min_day=comms_min,scheduled_checkins_day=checkins,anomaly_reports_day=events_day,engineering=p)
+ protected_h=max(0.,(after_report-recovery_required)/(-net)*24) if net<0 else (None if return_protected else 0.)
+ return dict(return_reserve_preserved=return_protected,return_protected_wh=recovery_required,maximum_protected_perched_hours=protected_h,relocation_required_wh=reposition_required,relocation_charge_h=recharge(reposition_required),relocation_flight_wh=relocation_wh,next_perch_return_wh=next_return_wh,relocation_distance_mi=reposition_mi,next_perch_return_distance_mi=range_mi+reposition_mi,insertion_energy_feasible=insertion_ok,station_energy_feasible=station_ok,mission_energy_feasible=mission_ok,battery_capacity_wh=capacity,arrival_energy_wh=arrival_energy,minimum_station_energy_wh=minimum,end_station_energy_wh=end_energy,spilled_solar_wh=spilled,recovery_required_wh=recovery_required,solar_credit_wh=solar_credit,station_energy_wh=station_energy,insertion_wh=insertion,retrieval_wh=retrieval,mass_lb=mass_lb,battery_kg=p['battery_kg'],nonbattery_kg=m-p['battery_kg'],required_nominal_no_solar_wh=required_no_solar,required_nominal_average_solar_wh=required_average,required_installed_whkg=required_average/p['battery_kg'],station_wh_day=daily_load,solar_wh_day=weather_solar,daily_balance_wh=net,energy_margin_average_wh=margin,recovery_charge_h=recharge(recovery_required),reposition_charge_h=recharge(reposition_required),required_energy_neutral_good_day_wh=(daily_load-(1-good_pct/100)*bad_wh)/(good_pct/100) if good_pct else None,flight_w=r['flight_w'],hover_w=r['hover_w'],thrust_per_rotor_kgf=r['thrust_required_kgf'],peak_w=r['peak_w'],comms_min_day=comms_min,scheduled_checkins_day=checkins,anomaly_reports_day=events_day,engineering=p)
 
 # Provisional trade-study assumptions, not measured cell or pack data.
 TEMPERATURE_CAPACITY_POINTS=((-20.,.60),(-10.,.75),(0.,.85),(10.,.95),(20.,1.),(40.,1.),(50.,.90))
