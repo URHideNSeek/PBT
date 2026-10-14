@@ -9,10 +9,10 @@ with st.sidebar:
  st.header('Platform & mission')
  mass=st.slider('Flight-ready mass, including payload (lb)',8.,19.9,19.5,.1)
  distance=st.slider('Range per leg (statute miles)',.5,15.,6.,.5)
- hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=6.)
+ hours=st.number_input('Time on target (hours)',min_value=1.,max_value=720.,value=6.,step=1.)
  good=st.slider('Good solar days (%)',0,100,50)
  st.caption(f'{100-good}% bad solar days. Solar mix is an average, not a weather guarantee.')
- deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=24.)
+ deadline=st.number_input('Desired recharge time before next departure (hours)',min_value=0.,max_value=720.,value=24.,step=1.)
  checkins=st.slider('Scheduled communications check-ins per day',0,48,4)
  if checkins==0: st.caption('Anomaly and sleep-transition reports only. These still consume energy.')
  tier2=st.slider('Tier 2 active minutes per day',0,1440,40)
@@ -42,7 +42,7 @@ b.metric('Required battery · average solar credit',f"{r['required_nominal_avera
 c.metric('Station daily energy balance',f"{r['daily_balance_wh']:+.0f} Wh/day")
 st.subheader('Design specifications engineering must meet')
 rows=[('Installed battery mass allocation',r['battery_kg'],'kg'),('Nonbattery mass allocation',r['nonbattery_kg'],'kg'),('Required installed battery specific energy with average solar',r['required_installed_whkg'],'Wh/kg'),('Continuous thrust required per rotor',r['thrust_per_rotor_kgf'],'kgf'),('Estimated hover power',r['hover_w'],'W'),('Estimated cruise power',r['flight_w'],'W'),('Estimated maneuver electrical power',r['peak_w'],'W'),('Station consumption',r['station_wh_day'],'Wh/day'),('Average solar harvest',r['solar_wh_day'],'Wh/day'),('Good-day harvest needed for energy-neutral station operation',r['required_energy_neutral_good_day_wh'],'Wh/day'),('Scheduled + anomaly communications duration',r['comms_min_day'],'min/day')]
-st.dataframe(pd.DataFrame([{'Specification':k,'Value':'Not attainable with this weather mix' if v is None else round(v,2),'Units':u} for k,v,u in rows]),hide_index=True,width='stretch')
+st.dataframe(pd.DataFrame([{'Specification':k,'Value':'Not applicable at 0% good days' if v is None else f'{v:.2f}','Units':u} for k,v,u in rows]),hide_index=True,width='stretch')
 st.subheader('Ready to move?')
 for label,key in [('Recover to operator','recovery_charge_h'),('Reposition to next perch','reposition_charge_h')]:
  v=r[key]
@@ -51,7 +51,9 @@ for label,key in [('Recover to operator','recovery_charge_h'),('Reposition to ne
   st.write(f'**{label}: {v:.1f} hours recharge** after the selected time on target.')
   if v>deadline: st.warning(f'Exceeds the {deadline:g}-hour desired recharge time.')
 st.caption('Recharge uses average net solar after continuing sensing/communications loads. Zero means energy-ready, not departure clearance. Negative daily balance can be tolerated for a finite mission but is not indefinite persistence.')
-if r['energy_margin_average_wh']<0: st.error(f"Assumed battery misses the average-solar mission by {-r['energy_margin_average_wh']:.0f} Wh.")
+if not r['insertion_energy_feasible']: st.error('Insertion needs more energy than the assumed battery can provide before solar charging.')
+if not r['station_energy_feasible']: st.error('Battery crosses the analysis minimum during the station mission. Recharge readiness is not claimed.')
+if not r['mission_energy_feasible']: st.error(f"Assumed battery does not close the mission. Recovery energy margin: {r['energy_margin_average_wh']:.0f} Wh.")
 else: st.success(f"Average-solar energy margin: {r['energy_margin_average_wh']:.0f} Wh. Weather sequencing and other closure checks still require review.")
 st.info('Mass includes payload. Battery mass and flight power remain coupled. The solar mix averages good and bad days; a string of bad days may fail even when the average passes. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
 if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
