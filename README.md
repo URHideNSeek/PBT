@@ -1,4 +1,4 @@
-# PBT — Pigeon Bot Trade Engine
+# Mission Trade Study
 
 Streamlit aircraft + unattended perched sensor sizing app. Explore parameters before selecting parts.
 
