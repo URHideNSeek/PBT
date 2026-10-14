@@ -39,3 +39,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for Windows / macOS launch scripts and privat
 `app.py` now asks for flight-ready mass including payload, range per leg, time on target, good/bad solar-day mix, desired recharge time, scheduled check-ins per day and Tier 2 minutes/day. Zero scheduled check-ins retains anomaly and sleep-transition reporting energy. Advanced assumptions remain editable. Outputs include required battery Wh and Wh/kg, thrust and power, solar balance and estimated recharge time for recovery or repositioning. Mission comparison CSV/JSON exports are available.
 
 The weather mix is an average, not a chronological worst-case simulation. Activity is prorated for partial days. No-solar-credit battery sizing is shown separately. Recharge assumes continuing sensing activity and average net harvest; it does not guarantee a departure time. Fixed subsystem mass and selected battery mass fraction can make low aircraft mass targets infeasible. No full aircraft closure is claimed. The original detailed front end remains available using `streamlit run advanced_app.py`.
+
+## Validation coverage
+
+See [qa/VALIDATION.md](qa/VALIDATION.md) for the 120,281-case validation run, corrected energy-accounting defects and explicit coverage limits. Run `python qa/validate_engine.py` to reproduce the deterministic sweep. GitHub Actions runs both the regression/UI tests and combinatorial checks.
