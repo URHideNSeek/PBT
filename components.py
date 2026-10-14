@@ -159,6 +159,7 @@ def bom(result,sizing,plan,settings):
  for id,name,k in [('STR','Structure / enclosure / mounting','structure_g'),('WIR','Wires / connectors reserve','wires_g'),('FST','Fasteners reserve','fasteners_g'),('SEA','Sealants / adhesives reserve','sealants_g'),('GRO','Growth reserve','growth_g')]:
   add(id,name,'reserve',1,settings[k]*(.65 if id=='STR' else 1),sourcing=False)
  add('MECH','Perch / transformation mechanism allowance','reserve',1,settings['structure_g']*.35,sourcing=False)
+ if result.get('additional_payload_kg',0)>0:add('PLD','Additional unpowered payload allowance','reserve',1,result['additional_payload_kg']*1000,sourcing=False)
  total=sum(r['mass_total_g'] for r in rows);flight=result['mass_lb']*.45359237*1000
  return {'rows':rows,'allocated_g':total,'flight_ready_g':flight,'margin_g':flight-total,'closed':total<=flight+1e-6,'storage_required_gb':storage,'peak_station_w':station_peak,'status':'Allocations and provisional selection requirements'}
 
