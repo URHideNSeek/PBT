@@ -30,10 +30,10 @@ class EnvelopeSizingUI(unittest.TestCase):
   from pathlib import Path
   from streamlit.testing.v1 import AppTest
   a=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py')).run(timeout=20)
-  next(b for b in a.button if b.label=='Calculate mass envelope').click().run(timeout=20)
+  next(b for b in a.button if b.label=='Calculate payload envelope').click().run(timeout=20)
   next(w for w in a.selectbox if w.label=='Sizing for').set_value('Envelope point').run(timeout=20)
   self.assertEqual(len(a.exception),0)
-  self.assertTrue(any(w.label=='Envelope mass (lb)' for w in a.selectbox))
+  self.assertTrue(any(w.label=='Envelope range per leg (mi)' for w in a.selectbox))
 class AssumptionValidation(unittest.TestCase):
  def test_nominal_cannot_be_below_loaded_voltage(self):
   with self.assertRaises(ValueError):derive(size(),nominal_voltage=12)
