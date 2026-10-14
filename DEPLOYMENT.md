@@ -16,8 +16,8 @@ bash run.sh
 
 ## Container on an existing private server
 ```bash
-docker build -t pbt .
-docker run --rm -p 127.0.0.1:8501:8501 pbt
+docker build -t trade-study .
+docker run --rm -p 127.0.0.1:8501:8501 trade-study
 ```
 
 The container runs as a non-root user. Host port binding is localhost only. For remote access, put it behind an authenticated HTTPS reverse proxy or private network. The app itself has no authentication. No public deployment has been performed. Container build requires Docker and has not been validated in the development runtime.
