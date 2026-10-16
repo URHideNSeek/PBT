@@ -427,8 +427,8 @@ with bom_tab:
  st.caption('Controlled sourcing requires source-backed NDAA evidence AND model-specific Blue UAS Framework evidence. Manufacturer declarations are identified as such; they do not constitute aircraft approval. Unrestricted sourcing removes those two gates; it does not mean a product is noncompliant. Unknown specifications are never a match.')
  catalog=json.loads((Path(__file__).parent/'catalog.json').read_text())
  matches=match(allocated['rows'],catalog,sourcing.startswith('NDAA'))
- st.caption(f"Sizing for: {selected}. Catalog sources checked October 14, 2026; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
- st.dataframe(pd.DataFrame([{'Component':m['row']['component'],'Qty':m['row']['quantity'],'Mass each (g)':round(m['row']['mass_each_g'],2),'Mass row (g)':round(m['row']['mass_total_g'],2),'Option 1':m['options'][0]['name'] if len(m['options'])>0 else '', 'Option 2':m['options'][1]['name'] if len(m['options'])>1 else '', 'Option 3':m['options'][2]['name'] if len(m['options'])>2 else '', 'Status':m['status']} for m in matches]),hide_index=True,width='stretch')
+ st.caption(f"Sizing for: {selected}. Catalog source checks through {max(p['checked_on'] for p in catalog)}; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
+ st.dataframe(pd.DataFrame([{'Component':m['row']['component'],'Qty':m['row']['quantity'],'Mass each (g)':round(m['row']['mass_each_g'],2),'Mass row (g)':round(m['row']['mass_total_g'],2),'Option 1':m['options'][0]['name'] if len(m['options'])>0 else '', 'Option 2':m['options'][1]['name'] if len(m['options'])>1 else '', 'Option 3':m['options'][2]['name'] if len(m['options'])>2 else '', 'Potential 1':m['candidates'][0]['product']['name'] if len(m['candidates'])>0 else '', 'Potential 2':m['candidates'][1]['product']['name'] if len(m['candidates'])>1 else '', 'Potential 3':m['candidates'][2]['product']['name'] if len(m['candidates'])>2 else '', 'Status':m['status']} for m in matches]),hide_index=True,width='stretch')
  if not allocated['closed']:st.error('Mass closure fails. Individual parameter matches below do not constitute a viable assembled BOM.')
  for item in matches:
   if not item['row']['sourcing']:continue
@@ -439,11 +439,21 @@ with bom_tab:
     st.markdown('**'+product['name']+'**');st.link_button('Manufacturer evidence',product['source_url']);st.json(metric_view(product['attributes']));st.caption(product.get('notes',''))
     st.caption('NDAA evidence: '+str(product.get('ndaa_source_url') or 'Not established')+' · Blue evidence: '+str(product.get('blue_source_url') or 'Not established'))
    if not item['options']:st.write('No product with complete evidence meets this row under the active constraints.')
+   for entry in item['candidates']:
+    product=entry['product']
+    st.markdown('**Potential candidate — verification needed: '+product['name']+'**')
+    st.caption(product.get('qualification','COTS candidate')+' · Source checked '+product['checked_on'])
+    st.write('; '.join(entry['reasons']))
+    st.json(metric_view(product['attributes']));st.caption(product.get('notes',''))
+    st.link_button('Candidate evidence',product['source_url'],key='pending_'+item['row']['id']+'_'+product['id'])
+    st.caption('NDAA evidence: '+str(product.get('ndaa_source_url') or 'Not established')+' · Blue evidence: '+str(product.get('blue_source_url') or 'Not established'))
    for entry in item['rejected']:
     st.markdown('**Candidate, excluded: '+entry['product']['name']+'**')
     st.write('; '.join(entry['reasons']));st.link_button('Candidate source',entry['product']['source_url'],key='source_'+item['row']['id']+'_'+entry['product']['id'])
-   if not item['options'] and not item['rejected']:st.caption('Catalog gap: no sourced candidate entered for this category yet. Request vendor data for the requirements above.')
+   if not item['options'] and not item['candidates'] and not item['rejected']:st.caption('Catalog gap: no sourced candidate entered for this category yet. Request vendor data for the requirements above.')
  count=sum(bool(x['options']) for x in matches if x['row']['sourcing']);needed=sum(x['row']['sourcing'] for x in matches)
  st.metric('COTS rows with at least one specification match',f'{count} / {needed}')
+ st.metric('COTS rows with potential candidates pending verification',f"{sum(bool(x['candidates']) for x in matches if x['row']['sourcing'])} / {needed}")
+ st.caption('Potential candidates are research leads, not approved substitutions. Known mismatches remain excluded; missing specifications and compliance evidence remain explicit. Candidate details include every catalog entry for the category. Matching does not re-size the aircraft using actual selected part masses.')
  st.caption('Zero means no evidenced match in this catalog under the active requirements, not proof that no product exists. Missing requirements and specifications are listed under each row.')
  st.download_button('Download BOM option evidence',json.dumps(metric_view({'sourcing':sourcing,'sizing_for':selected,'mass_closed':allocated['closed'],'matches':matches}),indent=2),'bom_options.json')
