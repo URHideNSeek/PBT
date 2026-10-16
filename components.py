@@ -202,8 +202,10 @@ def evaluate_product(row,product,strict=False):
  if row['open_requirements']:reasons+=['Open requirement: '+x for x in row['open_requirements']]
  if strict:
   for gate in ['ndaa','blue']:
-   if product.get(gate) is not True or not product.get(gate+'_source_url'):reasons.append('Missing '+gate.upper()+' exact-model evidence')
+   if product.get(gate) is False:reasons.append('Policy mismatch: '+gate.upper()+' declared false')
+   elif product.get(gate) is not True or not product.get(gate+'_source_url'):reasons.append('Missing '+gate.upper()+' exact-model evidence')
  if not product.get('source_url') or not product.get('checked_on'):reasons.append('Missing source/date')
+ if product.get('qualification') in ['Family sourcing lead','IC; integration required','Partial assembly candidate','Prototype board']:reasons.append('Integration needed: '+product['qualification'])
  attrs=product.get('attributes',{})
  for key,c in row['requirements'].items():
   a=attrs.get(key);v=c['value'];op=c['op']
@@ -219,14 +221,21 @@ def match(rows,catalog,strict=False):
  output=[]
  for row in rows:
   if not row['sourcing']:
-   output.append({'row':row,'options':[],'rejected':[],'status':'Reserved / custom; no COTS search'});continue
-  good=[];rejected=[]
+   output.append({'row':row,'options':[],'candidates':[],'rejected':[],'status':'Reserved / custom; no COTS search'});continue
+  good=[];pending=[];rejected=[];seen=set()
   for product in catalog:
-   if row['category'] not in product.get('categories',[product.get('category')]):continue
+   if row['category'] not in product.get('categories',[product.get('category')]) or product['id'] in seen:continue
+   seen.add(product['id'])
    reasons=evaluate_product(row,product,strict)
-   if reasons:rejected.append({'product':product,'reasons':reasons})
+   failures=[r for r in reasons if ' does not meet ' in r or r.startswith('Policy mismatch:')]
+   entry={'product':product,'reasons':reasons,'failures':failures}
+   if failures:rejected.append(entry)
+   elif reasons:pending.append(entry)
    else:good.append(product)
-  good=list({x['id']:x for x in good}.values())
   good.sort(key=lambda x:(x['attributes'].get('mass_g',float('inf')),x['id']))
-  output.append({'row':row,'options':good[:3],'rejected':rejected,'status':f'{min(3,len(good))} specification matches' if good else '0 viable options / evidence gaps'})
+  pending.sort(key=lambda x:(len(x['reasons']),x['product']['id']))
+  status=(f'{min(3,len(good))} specification matches' if good else
+          f'{len(pending)} candidates — verification needed' if pending else
+          'No documented fit — known mismatches' if rejected else 'Not researched yet')
+  output.append({'row':row,'options':good[:3],'candidates':pending,'rejected':rejected,'status':status})
  return output
