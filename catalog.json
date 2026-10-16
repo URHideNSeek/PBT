@@ -680,5 +680,350 @@
     "blue": null,
     "ndaa_source_url": null,
     "blue_source_url": null
+  },
+  {
+    "id": "teensy41",
+    "name": "PJRC Teensy 4.1",
+    "categories": [
+      "low_power_controller"
+    ],
+    "source_url": "https://www.pjrc.com/store/teensy41.html",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "Development board candidate. Measure whole-board polling/sleep power, mass and wake behavior; debugger, peripherals and power switching are not included.",
+    "qualification": "Prototype board",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "nucleo-l432kc",
+    "name": "ST NUCLEO-L432KC",
+    "categories": [
+      "low_power_controller"
+    ],
+    "source_url": "https://www.st.com/en/evaluation-tools/nucleo-l432kc.html",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "STM32L432KC Nucleo-32 prototype board. MCU low-power figures are not assembled-board figures; isolate debugger and verify rails/wake logic.",
+    "qualification": "Prototype board",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "omron-d2f",
+    "name": "Omron D2F switch family",
+    "categories": [
+      "contact",
+      "position_sensor"
+    ],
+    "source_url": "https://components.omron.com/sites/default/files/datasheet_pdf/B036-E1_0.pdf",
+    "attributes": {
+      "interface": "GPIO"
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Select exact terminal/lever/contact-force suffix after mechanism design. Needs mounting, pull-up, debounce and independent secured-state logic. Not a sealed installed assembly.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "drv5032",
+    "name": "Texas Instruments DRV5032DGDMRR",
+    "categories": [
+      "position_sensor"
+    ],
+    "source_url": "https://www.ti.com/product/DRV5032/part-details/DRV5032DGDMRR",
+    "attributes": {
+      "interface": "GPIO"
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Hall-switch IC requires PCB, magnet, magnetic tolerance and secured-position verification. Package data is not complete installed sensor mass/power.",
+    "qualification": "IC; integration required",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "pi-zero2",
+    "name": "Raspberry Pi Zero 2 W",
+    "categories": [
+      "compute"
+    ],
+    "source_url": "https://www.raspberrypi.com/products/raspberry-pi-zero-2-w/",
+    "attributes": {
+      "ram_gb": 0.5
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Benchmark selected sensing workload; measure board power and temperature. Headers, storage, carrier, regulator and CSI/USB integration are additional.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "mn3110-700",
+    "name": "T-Motor MN3110 KV700",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://store.tmotor.com/product/mn3110-motor-navigator-type.html",
+    "attributes": {
+      "mass_g": 99.0,
+      "voltage_min_v": 11.1,
+      "voltage_max_v": 25.2
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Exact KV700 candidate. Published test curves must be checked against selected voltage, folding blade, hub, continuous thrust and thermal duty; no inferred 24 V compatibility. Manufacturer lists 99 g including cables and 3\u20136S input; 466 W/21 A ratings are only 180-second limits, not entered as continuous ratings.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "aeronaut723939",
+    "name": "aero-naut CAM-Carbon Z 723939 11x6",
+    "categories": [
+      "propeller"
+    ],
+    "source_url": "https://aero-naut.de/CAM-Carbon-Z-11-0x-6-0/723939",
+    "attributes": {
+      "diameter_in": 11.0,
+      "pitch_in": 6.0,
+      "folding": true
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Folding blade candidate; matched hub, assembled diameter, rotation direction, RPM and multirotor thrust require confirmation. 11-inch product does not meet an exact 11.5-inch selection.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "boson640",
+    "name": "Teledyne FLIR Boson 20640A006",
+    "categories": [
+      "thermal"
+    ],
+    "source_url": "https://www.oem.flir.com/products/boson/?model=20640A006",
+    "attributes": {
+      "pixels_x": 640,
+      "pixels_y": 512
+    },
+    "checked_on": "2026-10-16",
+    "notes": "Verify lens, carrier, frame-rate option, interfaces and complete installed power/mass. Manufacturer NDAA declaration is separate from model-specific Blue evidence.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "microhard2450",
+    "name": "Microhard pMDDL2450 OEM",
+    "categories": [
+      "radio"
+    ],
+    "source_url": "https://www.microhardcorp.com/pMDDL2450.php",
+    "attributes": {
+      "frequency_min_mhz": 2400.0,
+      "temp_min_c": -40.0,
+      "temp_max_c": 85.0,
+      "interfaces": [
+        "USB",
+        "UART",
+        "Ethernet"
+      ]
+    },
+    "checked_on": "2026-10-16",
+    "notes": "2.4 GHz mesh-capable OEM candidate; cannot substitute for a 915 MHz requirement. Obtain exact band, power, module variant and installed link-budget evidence. Catalog lower bound 2400 MHz represents the documented 2.4 GHz band; exact band edges remain to verify.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "bg95m3",
+    "name": "Quectel BG95-M3 Mini PCIe",
+    "categories": [
+      "cellular"
+    ],
+    "source_url": "https://www.quectel.com/product/lpwa-bg95-m3-mpcie/",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "LPWA candidate, not a guaranteed broadband replacement. Requires carrier/SIM, regional band certification, carrier board, antennas and measured application throughput.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "iridium9603",
+    "name": "Iridium 9603 module",
+    "categories": [
+      "satcom"
+    ],
+    "source_url": "https://www.iridium.com/products/iridium-9603-module",
+    "attributes": {
+      "mass_g": 11.4,
+      "temp_min_c": -40.0,
+      "temp_max_c": 85.0,
+      "voltage_min_v": 4.5,
+      "voltage_max_v": 5.5
+    },
+    "checked_on": "2026-10-16",
+    "notes": "SBD message modem rather than broadband terminal. Needs carrier/power buffering and antenna; validate message size, service and delivery latency against mission reporting. Module supply is 5 V \u00b10.5 V, so a regulated interface is required for a 24 V bus; published message-transfer 0.8 W average is not peak design power.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "kyocera-lds",
+    "name": "KYOCERA AVX Iridium LDS Cap Antenna",
+    "categories": [
+      "antenna_set"
+    ],
+    "source_url": "https://www.iridium.com/products/iridium-lds-cap-antenna",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "Satellite/GNSS antenna element only. Does not replace mesh MIMO elements or cellular antennas/coax. Complete installed antenna set remains an integration task.",
+    "qualification": "Partial assembly candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "maxeon-cells",
+    "name": "Maxeon back-contact solar cells",
+    "categories": [
+      "solar"
+    ],
+    "source_url": "https://www.maxeon.com/maxeon-solar-cells",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "Cell technology sourcing lead; exact cell grade/MPN and availability needed. Circular array cutting, encapsulation, interconnects, shading and battery-delivered output are unverified.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "lt8490",
+    "name": "Analog Devices LT8490",
+    "categories": [
+      "charger"
+    ],
+    "source_url": "https://www.analog.com/en/products/lt8490.html",
+    "attributes": {
+      "mppt": true
+    },
+    "checked_on": "2026-10-16",
+    "notes": "MPPT controller IC, not complete charger. Requires custom power stage, thermistor, chemistry profile, PCB and qualification; do not use IC mass as installed charger mass.",
+    "qualification": "IC; integration required",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "lt8491",
+    "name": "Analog Devices LT8491",
+    "categories": [
+      "charger"
+    ],
+    "source_url": "https://www.analog.com/en/products/LT8491.html",
+    "attributes": {
+      "mppt": true
+    },
+    "checked_on": "2026-10-16",
+    "notes": "I2C MPPT charger controller alternative. Complete power-stage mass, charge current, solar IV limits and battery safety must be engineered.",
+    "qualification": "IC; integration required",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "pololu-6v",
+    "name": "Pololu D24V150F6 6 V regulator",
+    "categories": [
+      "power"
+    ],
+    "source_url": "https://www.pololu.com/product/2882",
+    "attributes": {
+      "output_rails_v": [
+        6.0
+      ]
+    },
+    "checked_on": "2026-10-16",
+    "notes": "6 V rail building block only. Not a complete 5 V + actuator distribution assembly; current depends on input voltage and cooling.",
+    "qualification": "Partial assembly candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "ark-mosaic",
+    "name": "ARK MOSAIC-X5 RTK GPS",
+    "categories": [
+      "gnss"
+    ],
+    "source_url": "https://arkelectron.com/product/ark-mosaic-x5-gps/",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "RTK GNSS candidate; verify compass, installed mass, correction service, voltage, power and antenna configuration before allocation.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "sf11c",
+    "name": "LightWare SF11/C",
+    "categories": [
+      "range"
+    ],
+    "source_url": "https://lightwarelidar.com/shop/sf11-c-100-m2/",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "Flight altimeter candidate; near-perch accuracy, short-range blind zone, reflectivity, mass and active power must meet approach requirements.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
+  },
+  {
+    "id": "saft-mp-pack",
+    "name": "Saft 7s2p MP 176065 BLF",
+    "categories": [
+      "battery"
+    ],
+    "source_url": "https://saft4u.saft.com/en/download_file/d31dbd8b-a41d-4a81-a080-3117b4fff8bb/English",
+    "attributes": {},
+    "checked_on": "2026-10-16",
+    "notes": "Published pack datasheet is a sourcing lead; confirm current production, nominal energy, loaded voltage, continuous/peak current and complete BMS mass. Do not substitute cell energy density for pack performance.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null
   }
 ]
