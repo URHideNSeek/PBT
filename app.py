@@ -7,7 +7,7 @@ from mission import size, temperature_capacity_factor, TEMPERATURE_CAPACITY_POIN
 st.set_page_config(page_title='Mission Trade Study',page_icon='📊',layout='wide')
 st.title('Mission Trade Study')
 st.caption('Choose the capability to offer. See what engineering must achieve.')
-STARTUP_PRESET={'mission_payload':.06,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25),'mission_elevation':0.}
+STARTUP_PRESET={'mission_payload':.06,'mission_range':.804672,'mission_hours':1.,'mission_solar':100,'mission_checkins':1,'mission_tier2':1,'battery_fraction_pct':20,'mission_temperature':(20,25),'mission_elevation':0.,'mission_wind':0.}
 PRESET_VERSION='payload-driven-v5'
 def reset_startup_preset():
  for key,value in STARTUP_PRESET.items(): st.session_state[key]=value
@@ -19,12 +19,16 @@ if st.session_state.get('startup_preset_version')!=PRESET_VERSION:
 with st.sidebar:
  st.header('Platform & mission')
  st.button('Reset to least-mass starting case',on_click=reset_startup_preset)
- st.caption('Starting preset: 0.060 kg (0.13 lb) payload · 0.805 km (0.5 mi) per leg · 1 hour on target.')
+ st.caption('Starting preset: 0.060 kg (0.13 lb) payload · 0.805 km (0.5 mi) per leg · 1 hour on target · still air.')
  payload_kg=st.slider('Payload mass (kg)',0.,2.72155422,step=.05,key='mission_payload',format='%.3f')
  st.caption(f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb · limits 0–2.722 kg / 0–6 lb')
  distance_km=st.slider('Range per leg (km)',0.,16.1,step=.1,key='mission_range',format='%.3f')
  distance=distance_km/1.609344
  st.caption(f'{distance_km:.3f} km / {distance:.2f} mi · limits 0–16.1 km / 0–10.00 mi')
+ st.session_state.setdefault('mission_wind',0.)
+ wind_ms=st.slider('Planning headwind (m/s)',0.,15.5,step=.1,key='mission_wind')
+ wind=wind_ms/.514444444444
+ st.caption(f'{wind_ms:.1f} m/s / {wind:.1f} kt. Still air is the nominal case. The symmetric baseline applies this leg energy to both insertion and recovery.')
  hours=st.slider('Perched time (hours)',1.,720.,step=1.,key='mission_hours')
  st.caption(f'{hours/24:.2f} days perched; maximum 30 days.')
  good=st.slider('Good solar days (%)',0,100,key='mission_solar')
@@ -163,8 +167,7 @@ with sizing_tab:
   sleep=st.number_input('Sleep-transition communication allowance per mission (Wh)',min_value=0.,value=1.)
   hop=distance
   st.caption('Relocation hop equals the initial insertion distance. Recovery and a same-distance hop use the same complete-leg energy as insertion. The new perch assumes a single-leg recovery distance under matched flight conditions.')
-  wind_ms=st.slider('Steady wind (m/s)',0.,15.5,10.2888888889,step=.1)
-  wind=wind_ms/.514444444444
+  st.caption(f'Planning headwind is selected on the main panel: {wind_ms:.1f} m/s / {wind:.1f} kt.')
   speed_ms=st.slider('True cruise airspeed (m/s)',5.,31.,18.0055555556,step=.1)
   speed=speed_ms/.514444444444
   whkg=st.number_input('Assumed installed battery Wh/kg',min_value=50.,max_value=600.,value=322.)
@@ -198,36 +201,50 @@ model_inputs=dict(manage_sleep=True,sleep_w=node_sleep_w,sleep_margin_wh=node_sl
 from payload_sizing import size_payload
 current=size_payload(payload_kg,distance,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
 if current is None:
- if payload_kg<plan['sensor_kg']:st.error(f"Selected sensors require {plan['sensor_kg']:.3f} kg payload. Increase payload or reduce sensor selections.")
- else:st.error('No aircraft/battery allocation closes this mission within the engineering limits. Adjust payload, range, perched schedule or engineering assumptions.')
- st.stop()
-r=current['result'];r['atmosphere']=atmosphere;mass=r['mass_lb'];mass_kg=mass*.45359237;fraction=current['Battery fraction']
+ from payload_sizing import diagnose_payload
+ failure=diagnose_payload(payload_kg,distance,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
+ with mission_tab:
+  st.subheader('Flight')
+  st.error('Flight sizing blocked: '+failure['reason']+'.')
+  st.caption(f'Planning headwind: {wind_ms:.1f} m/s / {wind:.1f} kt. Cruise airspeed: {speed_ms:.1f} m/s / {speed:.1f} kt. Symmetric insertion/recovery energy; no Persist or hop energy is sizing this battery.')
+  if 'checks' in failure:
+   st.dataframe(pd.DataFrame([{'Flight constraint':name,'Result':'Pass' if passed else 'Fail'} for name,passed in failure['checks'].items()]),hide_index=True)
+   a,b,c=st.columns(3)
+   a.metric('Usable flight energy · diagnostic sample',f"{failure['usable_flight_energy_wh']:.0f} Wh")
+   b.metric('Required flight energy · diagnostic sample',f"{failure['required_flight_energy_wh']:.0f} Wh")
+   c.metric('Energy margin · diagnostic sample',f"{failure['energy_margin_wh']:+.0f} Wh")
+   st.caption(f"Sampled aircraft: {failure['sampled_aircraft_kg']:.2f} kg / {failure['sampled_aircraft_kg']/.45359237:.2f} lb; limit {failure['mass_limit_kg']:.2f} kg / {failure['mass_limit_kg']/.45359237:.2f} lb. These are failure diagnostics, not a feasible design.")
+  if failure.get('details'):st.write('Details: '+'; '.join(failure['details']))
+  st.info('Adjust range, payload or the visible planning headwind. Other flight assumptions remain editable in Engineering Sizing. Perched time, solar and sensing schedules cannot fix a flight-energy shortfall.')
+  st.download_button('Download flight failure diagnostics',json.dumps(failure,indent=2),'flight_failure.json')
+if current is not None:
+ r=current['result'];r['atmosphere']=atmosphere;mass=r['mass_lb'];mass_kg=mass*.45359237;fraction=current['Battery fraction']
 
-with mission_tab:
- st.subheader('Flight')
- st.caption(f'Site elevation {elevation_m:,.0f} m / {elevation_m/.3048:,.0f} ft MSL · density altitude {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft · air density {rho:.3f} kg/m³.')
- st.caption('Insertion determines the energy handed to Persist. Aircraft and battery sizing protects insertion and recovery only. Persist uses the resulting fixed battery; perched duration, solar and activity schedules do not resize the aircraft.')
- a,b,c=st.columns(3)
- a.metric('Selected payload',f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb')
- b.metric('Calculated total aircraft mass',f'{mass_kg:.3f} kg / {mass:.2f} lb')
- c.metric('Calculated battery mass',f"{r['battery_kg']:.3f} kg")
- from model import evaluate
- flight_result=evaluate(r['engineering'])
- flight_cruise_min=distance/1.150779/flight_result['outbound_ground_kt']*60
- leg_min=flight_cruise_min+r['engineering']['hover_min']/2
- a,b,c=st.columns(3)
- r['insertion_flight_min']=leg_min
- a.metric('Insertion flight time',f'{leg_min:.1f} min')
- b.metric('Insertion / complete-leg energy',f"{r['leg_energy_wh']:.1f} Wh")
- c.metric('Energy handed to Persist',f"{r['persist_entry_wh']:.1f} Wh")
- st.caption(f'Insertion distance: {distance_km:.2f} km / {distance:.2f} mi. Flight time includes cruise plus the allocated approach/hover time; separate climb and transformation durations are not yet timed. Recovery uses the same complete-leg energy under the symmetric baseline.')
+ with mission_tab:
+  st.subheader('Flight')
+  st.caption(f'Site elevation {elevation_m:,.0f} m / {elevation_m/.3048:,.0f} ft MSL · density altitude {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft · air density {rho:.3f} kg/m³.')
+  st.caption('Insertion determines the energy handed to Persist. Aircraft and battery sizing protects insertion and recovery only. Persist uses the resulting fixed battery; perched duration, solar and activity schedules do not resize the aircraft.')
+  a,b,c=st.columns(3)
+  a.metric('Selected payload',f'{payload_kg:.3f} kg / {payload_kg/.45359237:.2f} lb')
+  b.metric('Calculated total aircraft mass',f'{mass_kg:.3f} kg / {mass:.2f} lb')
+  c.metric('Calculated battery mass',f"{r['battery_kg']:.3f} kg")
+  from model import evaluate
+  flight_result=evaluate(r['engineering'])
+  flight_cruise_min=distance/1.150779/flight_result['outbound_ground_kt']*60
+  leg_min=flight_cruise_min+r['engineering']['hover_min']/2
+  a,b,c=st.columns(3)
+  r['insertion_flight_min']=leg_min
+  a.metric('Insertion flight time',f'{leg_min:.1f} min')
+  b.metric('Insertion / complete-leg energy',f"{r['leg_energy_wh']:.1f} Wh")
+  c.metric('Energy handed to Persist',f"{r['persist_entry_wh']:.1f} Wh")
+  st.caption(f'Insertion distance: {distance_km:.2f} km / {distance:.2f} mi. Flight time includes cruise plus the allocated approach/hover time; separate climb and transformation durations are not yet timed. Recovery uses the same complete-leg energy under the symmetric baseline.')
 with mission_tab:
 
  st.divider()
  st.subheader('Payload mass versus range')
  st.caption('Payload is the selected total mission payload, including installed mission sensors and any extra unpowered payload. Total aircraft mass is calculated from hardware, reserves, payload and the minimum battery allocation that supports insertion and recovery.')
  calculate_envelope=st.button('Calculate payload envelope')
- envelope_inputs=('flight-only-node-sleep-v1',node_sleep_w,node_sleep_margin,node_wake_margin,elevation_m,json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
+ envelope_inputs=('explicit-headwind-diagnostics-v1',node_sleep_w,node_sleep_margin,node_wake_margin,elevation_m,json.dumps(plan,sort_keys=True),json.dumps(settings,sort_keys=True),payload_kg,fixed_nonbattery,plan['sensor_kg'],temp_low,temp_high,hours,good,checkins,tier2,good_wh,bad_wh,duration,events,event_duration,sleep,t1,t2,radio,wind,speed,whkg,derate,flight_electronics,profile_fraction,tip_speed_m_s,rho,arrival_hour,charge_limit_w,charge_eff,charge_temperature_c,charge_min_c,charge_max_c)
  if calculate_envelope or 'envelope_result' not in st.session_state or st.session_state.get('envelope_inputs')!=envelope_inputs or st.session_state['envelope_result'].get('kind')!='payload':
   from payload_sizing import payload_mass_curve
   points=payload_mass_curve(payload_kg,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
@@ -239,7 +256,7 @@ with mission_tab:
   st.session_state['envelope_inputs']=envelope_inputs
   st.session_state['envelope_result']={'kind':'payload','frame':frame,'points':points,'settings':{'payload_kg':payload_kg,'selected_hours':hours,'nonbattery_kg':fixed_nonbattery,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'capacity_factor':derate},'component_plan':plan,'component_settings':settings,'model_inputs':model_inputs}
  saved=st.session_state['envelope_result']
- if not any(x is not None for x in saved['points']):st.warning('No aircraft/battery allocation closes this payload and perched duration within the engineering limits while preserving return energy.')
+ if not any(x is not None for x in saved['points']):st.warning('No flight allocation closes this payload within the flight limits. Perched duration does not gate this curve.')
  chart_data=saved['frame'].copy()
  chart_data['Range per leg (mi)']=chart_data['Range per leg (km)']/1.609344
  chart_data['Payload mass (lb)']=chart_data['Payload mass (kg)']/.45359237
@@ -258,6 +275,11 @@ with mission_tab:
  st.caption('Payload mass is held at the slider selection. Total aircraft mass changes with the battery required at each range. Only flight-feasible points within the engineering limits are plotted.')
  st.caption(f'Selected perched time: {hours:g} hours ({hours/24:.2f} days). Missing points cannot complete insertion and recovery within the engineering limits. Extra powered payload needs its electrical load entered before using this boundary. Recharge time does not gate this curve.')
  st.download_button('Download payload envelope CSV',saved['frame'].to_csv(index=False),file_name='payload_envelope.csv')
+
+if current is None:
+ with mission_tab:st.info('Persist results require a flight-feasible configuration. The envelope above shows the ranges that can be sized.')
+ with bom_tab:st.info('No feasible flight configuration is available for a BOM. Flight assumptions and sensor selections remain editable in Engineering Sizing.')
+ st.stop()
 
 with mission_tab:
  st.divider()
@@ -333,7 +355,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery sizing depends on flight, not perched duration or activity. Peak flight power and battery mass remain coupled. The daylight profile uses an average good/bad-day yield; a string of bad days may still fail. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'atmosphere':atmosphere,'mission':{'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'atmosphere':atmosphere,'mission':{'planning_headwind_m_s':wind_ms,'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
