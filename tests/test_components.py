@@ -95,3 +95,30 @@ class LockedSensorsUI(unittest.TestCase):
   self.assertFalse(a.exception)
   self.assertEqual(a.session_state['envelope_result']['settings']['nonbattery_kg'],before)
   self.assertGreater(a.session_state['envelope_result']['component_plan']['daily_gb'],0)
+
+class CandidateScreening(unittest.TestCase):
+ def setUp(self):
+  self.row=dict(category='test',sourcing=True,open_requirements=[],requirements={'mass_g':constraint('<=',10.)})
+  self.product=dict(id='a',name='A',category='test',source_url='https://example.org',checked_on='2026-10-16',attributes={})
+ def test_missing_data_is_pending_not_failed(self):
+  m=match([self.row],[self.product])[0]
+  self.assertEqual(len(m['candidates']),1);self.assertFalse(m['options']);self.assertFalse(m['rejected'])
+ def test_known_mismatch_is_excluded_even_with_unknowns(self):
+  self.product['attributes']['mass_g']=11;self.row['open_requirements']=['Installed qualification']
+  m=match([self.row],[self.product])[0]
+  self.assertFalse(m['candidates']);self.assertEqual(len(m['rejected']),1)
+ def test_compliance_pending_and_explicit_failure(self):
+  self.product['attributes']['mass_g']=5
+  self.assertEqual(len(match([self.row],[self.product],True)[0]['candidates']),1)
+  self.product['ndaa']=False
+  self.assertEqual(len(match([self.row],[self.product],True)[0]['rejected']),1)
+  self.assertEqual(len(match([self.row],[self.product],False)[0]['options']),1)
+ def test_open_integration_is_pending(self):
+  self.product['attributes']['mass_g']=5;self.row['open_requirements']=['Installed test']
+  self.assertEqual(len(match([self.row],[self.product])[0]['candidates']),1)
+ def test_all_bom_and_sensor_categories_researched(self):
+  catalog=json.loads((ROOT/'catalog.json').read_text());categories={k for p in catalog for k in p['categories']}
+  plan=sensor_plan([],[],{},1,1,1);r=size(sensor_kg=plan['sensor_kg'])
+  rows=bom(r,derive(r),plan,settings())['rows']
+  self.assertTrue({row['category'] for row in rows if row['sourcing']}<=categories)
+  self.assertTrue({'acoustic','vibration','rf','radar','thermal','environment','pressure','light'}<=categories)
