@@ -130,3 +130,16 @@ The main mission panel now has an explicit Planning headwind selector in m/s wit
 Flight failures now use the same flight-input preparation and constraint checks as the sizing search. Diagnostics sample battery allocations within the existing mass limit, identify failed checks, and show usable/required energy, margin, sample mass and wind. Diagnostic samples are not presented as viable designs. The flight envelope and all previously rendered Engineering Sizing controls remain available on failure; Persist and BOM output are withheld rather than fabricated. The erroneous instruction to adjust perched duration for a flight-sizing failure is removed. Diagnostics are downloadable.
 
 A 1e-9 kg comparison tolerance removes roundoff-only structure-allocation failures; it is not a physical mass allowance. Regression tests cover both screenshot payloads in still air, failure classification under 20 kt planning headwind, unchanged energy accounting, and recovering from a failed selection without resetting the app. Propulsion calibration remains provisional pending matched test data.
+
+## Candidate research and screening (2026-10-16)
+
+The catalog now includes 52 entries covering every sourced BOM category, including optional mission sensors. Each entry retains its own source-check date. New entries distinguish complete product candidates, prototype boards, component ICs, partial assemblies, and product-family sourcing leads. A family or IC is not an installed COTS replacement.
+
+The BOM tab displays up to three fully documented specification matches and three potential candidates per row. The detail expander contains every researched candidate, its published attributes, outstanding verification, manufacturer source, and compliance evidence. The JSON export includes these classifications and all reasons.
+
+- Specification match: all allocated checks and applicable sourcing evidence are documented; this does not constitute aircraft approval.
+- Candidate — verification needed: no documented mismatch, but specifications, integration tests, requirements, or compliance evidence remain open.
+- Excluded: at least one known specification or selected sourcing-policy mismatch, even when other data is missing.
+- Not researched yet: no catalog entries for that category.
+
+Strict sourcing never promotes missing NDAA or model-specific Blue evidence to a match. Explicitly false compliance is excluded under that policy. A complete antenna set, solar array, power distribution system, matched folding propulsion system, and battery/BMS assembly still require integration work. Candidate mass is not substituted into the mass model automatically; the table retains engineering allocations. Prices, stock and lead times are not yet maintained.
