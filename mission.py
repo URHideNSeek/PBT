@@ -32,7 +32,7 @@ def size(mass_lb=19.5,range_mi=6.,days=.25,good_pct=50.,checkins=4,tier2_min_day
  p.update(battery_kg=m*battery_fraction,other_kg=0.,growth_kg=0.,out_mi=range_mi,back_mi=range_mi,hours=0.,t2_min=0.,radio_min=0.)
  # Fixed nonbattery mass is allocated by the remaining mass; this does not prove packaging.
  remainder=m-sum(p[k] for k in ['battery_kg','propulsion_kg','sensor_kg','compute_kg','comms_kg','solar_kg'])
- if remainder<minimum_other_kg: raise ValueError('Mass target cannot accommodate battery, selected sensors and installation reserves. Reduce allocations or change the mission mass/battery fraction.')
+ if remainder+1e-9<minimum_other_kg: raise ValueError('Mass target cannot accommodate battery, selected sensors and installation reserves. Reduce allocations or change the mission mass/battery fraction.')
  p['other_kg']=remainder
  p['flight_electronics_w']=flight_electronics_w
  r=evaluate(p)
