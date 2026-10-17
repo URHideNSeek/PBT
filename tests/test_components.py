@@ -83,6 +83,7 @@ class LockedSensorsUI(unittest.TestCase):
    w=a.checkbox(key='sensor_flight_'+key)
    self.assertTrue(w.value);self.assertTrue(w.disabled)
   for key in SENSORS:
+   if key=='perch_camera':continue
    a.checkbox(key='sensor_t1_'+key).uncheck()
    a.checkbox(key='sensor_t2_'+key).uncheck()
   a.slider(key='mission_tier2').set_value(0).run(timeout=30)
@@ -90,10 +91,11 @@ class LockedSensorsUI(unittest.TestCase):
   self.assertTrue(all(a.checkbox(key='sensor_flight_'+key).value for key in REQUIRED_SENSOR_HOSTS))
   self.assertTrue(any('Required perch distance sensor' in str(x.value) for x in a.dataframe))
 
+  a.slider(key='mission_payload').set_value(.2).run(timeout=30)
   before=a.session_state['envelope_result']['settings']['nonbattery_kg']
   a.checkbox(key='sensor_t1_visible').check().run(timeout=30)
   self.assertFalse(a.exception)
-  self.assertEqual(a.session_state['envelope_result']['settings']['nonbattery_kg'],before)
+  self.assertAlmostEqual(a.session_state['envelope_result']['settings']['nonbattery_kg']-before,.03)
   self.assertGreater(a.session_state['envelope_result']['component_plan']['daily_gb'],0)
 
 class CandidateScreening(unittest.TestCase):
@@ -122,3 +124,61 @@ class CandidateScreening(unittest.TestCase):
   rows=bom(r,derive(r),plan,settings())['rows']
   self.assertTrue({row['category'] for row in rows if row['sourcing']}<=categories)
   self.assertTrue({'acoustic','vibration','rf','radar','thermal','environment','pressure','light'}<=categories)
+
+class PhaseCommunicationsTests(unittest.TestCase):
+ def test_all_phase_selections_count_hardware_once(self):
+  from itertools import product
+  from components import COMMS_PHASES,COMMS_DEFAULTS,communications_plan
+  slots=[(phase,key) for phase in COMMS_PHASES for key in COMMS_DEFAULTS]
+  for flags in product([False,True],repeat=len(slots)):
+   selection={phase:[] for phase in COMMS_PHASES}
+   for enabled,(phase,key) in zip(flags,slots):
+    if enabled:selection[phase].append(key)
+   c=communications_plan(selection,COMMS_DEFAULTS)
+   fitted=set().union(*(set(v) for v in selection.values()))
+   self.assertEqual(set(c['installed']),fitted)
+   self.assertAlmostEqual(c['mass_g'],sum(COMMS_DEFAULTS[k]['mass_g']+COMMS_DEFAULTS[k]['antenna_g'] for k in fitted))
+   self.assertAlmostEqual(c['flight_w'],sum(COMMS_DEFAULTS[k]['active_w'] for k in selection['flight']))
+ def test_separate_scheduled_and_anomaly_energy(self):
+  from components import COMMS_DEFAULTS,communications_plan,communications_schedule
+  c=communications_plan({'passive':['rf'],'active':['satcom']},COMMS_DEFAULTS)
+  p={'comms_compute_increment_w':2.}
+  s=communications_schedule(c,p,6,2,3,1)
+  self.assertAlmostEqual(s['scheduled_wh_day'],(8-.02+2)*12/60)
+  self.assertAlmostEqual(s['event_wh_day'],(15-.02+2)*3/60)
+  self.assertAlmostEqual(s['equivalent_increment_w']*15/60,s['scheduled_wh_day']+s['event_wh_day'])
+ def test_no_links_no_reports_or_installed_mass(self):
+  from components import COMMS_DEFAULTS,communications_plan,communications_schedule
+  c=communications_plan({},COMMS_DEFAULTS);s=communications_schedule(c,{'comms_compute_increment_w':3},48,1,2,1)
+  self.assertEqual(c['mass_g'],0);self.assertEqual(c['standby_w'],0)
+  self.assertEqual(s['checkins'],0);self.assertEqual(s['events'],0);self.assertEqual(s['equivalent_increment_w'],0)
+ def test_landing_camera_cannot_be_allocated_to_tiers(self):
+  self.assertNotIn('visible',REQUIRED_SENSOR_HOSTS);self.assertIn('perch_camera',REQUIRED_SENSOR_HOSTS)
+  with self.assertRaisesRegex(ValueError,'landing-only'):sensor_plan(['perch_camera'],[],{'perch_camera':profile('perch_camera')},1,10,0)
+ def test_visual_camera_separate_from_landing_bom(self):
+  plan=sensor_plan([],['visible'],{'visible':profile('visible'),'perch_camera':profile('perch_camera')},1,10,0)
+  self.assertAlmostEqual(plan['sensor_kg'],.03)
+  r=size(sensor_kg=plan['sensor_kg']);rows=bom(r,derive(r),plan,settings())['rows']
+  self.assertTrue({'NAVCAM','SEN-visible'}<={x['id'] for x in rows})
+ def test_disabled_radios_absent_from_bom(self):
+  from components import COMMS_DEFAULTS,communications_plan
+  c=communications_plan({'flight':['rf'],'passive':['rf']},COMMS_DEFAULTS)
+  plan=sensor_plan([],[],{},1,1,0);r=size(comms_kg=c['mass_g']/1000)
+  cfg=settings();cfg['communications']=c
+  rows=bom(r,derive(r),plan,cfg)['rows'];ids={x['id'] for x in rows}
+  self.assertTrue({'RF','ANT'}<=ids);self.assertTrue({'LTE','SAT'}.isdisjoint(ids))
+  self.assertAlmostEqual(sum(x['mass_total_g'] for x in rows if x['id'] in {'RF','ANT'}),c['mass_g'])
+ def test_ui_landing_lock_visual_payload_and_comms(self):
+  from streamlit.testing.v1 import AppTest
+  a=AppTest.from_file(str(ROOT/'app.py')).run(timeout=30);self.assertFalse(a.exception)
+  for tier in ['t1','t2']:
+   w=a.checkbox(key='sensor_'+tier+'_perch_camera');self.assertFalse(w.value);self.assertTrue(w.disabled)
+  self.assertFalse(a.checkbox(key='sensor_flight_visible').value)
+  a.slider(key='mission_payload').set_value(.2).run(timeout=30)
+  a.checkbox(key='sensor_t2_visible').check().run(timeout=30);self.assertFalse(a.exception)
+  self.assertTrue(any('Visual ISR camera' in str(d.value) for d in a.dataframe))
+  before=a.session_state['envelope_result']['settings']['nonbattery_kg']
+  for phase in ['prep','flight','passive','active']:a.checkbox(key='comms_'+phase+'_satcom').uncheck()
+  a.run(timeout=30);self.assertFalse(a.exception)
+  after=a.session_state['envelope_result']['settings']['nonbattery_kg']
+  self.assertAlmostEqual(before-after,.4872)
