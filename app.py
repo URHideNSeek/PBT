@@ -426,7 +426,11 @@ with bom_tab:
  sourcing=st.selectbox('Component sourcing',['NDAA + Blue UAS evidence required','Unrestricted sourcing'])
  st.caption('Controlled sourcing requires source-backed NDAA evidence AND model-specific Blue UAS Framework evidence. Manufacturer declarations are identified as such; they do not constitute aircraft approval. Unrestricted sourcing removes those two gates; it does not mean a product is noncompliant. Unknown specifications are never a match.')
  catalog=json.loads((Path(__file__).parent/'catalog.json').read_text())
- matches=match(allocated['rows'],catalog,sourcing.startswith('NDAA'))
+ # Execute the local screener afresh: a warm Streamlit process may retain an older
+ # imported module while app.py and catalog.json have already updated.
+ from runpy import run_path
+ current_match=run_path(str(Path(__file__).parent/'components.py'))['match']
+ matches=current_match(allocated['rows'],catalog,sourcing.startswith('NDAA'))
  st.caption(f"Sizing for: {selected}. Catalog source checks through {max(p['checked_on'] for p in catalog)}; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
  st.dataframe(pd.DataFrame([{'Component':m['row']['component'],'Qty':m['row']['quantity'],'Mass each (g)':round(m['row']['mass_each_g'],2),'Mass row (g)':round(m['row']['mass_total_g'],2),'Option 1':m['options'][0]['name'] if len(m['options'])>0 else '', 'Option 2':m['options'][1]['name'] if len(m['options'])>1 else '', 'Option 3':m['options'][2]['name'] if len(m['options'])>2 else '', 'Potential 1':m['candidates'][0]['product']['name'] if len(m['candidates'])>0 else '', 'Potential 2':m['candidates'][1]['product']['name'] if len(m['candidates'])>1 else '', 'Potential 3':m['candidates'][2]['product']['name'] if len(m['candidates'])>2 else '', 'Status':m['status']} for m in matches]),hide_index=True,width='stretch')
  if not allocated['closed']:st.error('Mass closure fails. Individual parameter matches below do not constitute a viable assembled BOM.')
