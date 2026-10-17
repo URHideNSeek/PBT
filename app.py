@@ -48,10 +48,18 @@ with st.sidebar:
  st.caption(f'Temperature capacity: {temperature_factor:.0%} of reference capacity. Uses the worst point in the selected range.')
 
 mission_tab,sizing_tab,bom_tab=st.tabs(['Mission & Envelope','Engineering Sizing','BOM Options'])
-from components import SENSORS, sensor_plan, operating_power, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W
 from pathlib import Path
+from runpy import run_path
+# Load this UI/model contract together on every rerun, including warm deployments.
+component_api=run_path(str(Path(__file__).parent/'components.py'))
+SENSORS, sensor_plan, operating_power, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W, COMMS_PHASES, COMMS_DEFAULTS, communications_plan, communications_schedule=(component_api[name] for name in ('SENSORS','sensor_plan','operating_power','bom','match','REQUIRED_SENSOR_HOSTS','FIXED_PERCH_SENSOR_G','FIXED_PERCH_SENSOR_SLEEP_W','COMMS_PHASES','COMMS_DEFAULTS','communications_plan','communications_schedule'))
+if st.session_state.get('camera_role_version')!='landing-only-v1':
+ st.session_state['sensor_t1_visible']=False
+ st.session_state['sensor_t2_visible']=False
+ st.session_state['camera_role_version']='landing-only-v1'
 with sizing_tab:
  st.subheader('Sensor configuration')
+ st.caption('The perch camera is landing-only and cannot operate in Tier 1 or Tier 2. The separate visual ISR camera can be selected for either tier and has its own mass, power and storage allocation.')
  st.caption('Flight / perching is the locked installed-hardware baseline. Tier 1 and Tier 2 select stationary sensing activity using that same hardware. An unchecked tier means idle/not collecting in that tier; required sensors remain available for flight, perching and protection functions.')
  tier1_keys=[];tier2_keys=[]
  with st.container(border=True):
@@ -61,8 +69,11 @@ with sizing_tab:
    name_col,flight_col,tier1_col,tier2_col=st.columns([4,1.5,1,1],gap='small',vertical_alignment='center')
    name_col.write(sensor_details[0])
    flight_col.checkbox(sensor_details[0]+' · Flight / perching',value=sensor_key in REQUIRED_SENSOR_HOSTS,disabled=True,key='sensor_flight_'+sensor_key,label_visibility='collapsed')
-   if tier1_col.checkbox(sensor_details[0]+' · Tier 1',value=sensor_key in ['environment','pressure','light'],key='sensor_t1_'+sensor_key,label_visibility='collapsed'):tier1_keys.append(sensor_key)
-   if tier2_col.checkbox(sensor_details[0]+' · Tier 2',value=sensor_key in ['visible','thermal'],key='sensor_t2_'+sensor_key,label_visibility='collapsed'):tier2_keys.append(sensor_key)
+   if sensor_key=='perch_camera':
+    st.session_state['sensor_t1_perch_camera']=False
+    st.session_state['sensor_t2_perch_camera']=False
+   if tier1_col.checkbox(sensor_details[0]+' · Tier 1',value=sensor_key in ['environment','pressure','light'],disabled=sensor_key=='perch_camera',key='sensor_t1_'+sensor_key,label_visibility='collapsed'):tier1_keys.append(sensor_key)
+   if tier2_col.checkbox(sensor_details[0]+' · Tier 2',value=sensor_key in ['thermal'],disabled=sensor_key=='perch_camera',key='sensor_t2_'+sensor_key,label_visibility='collapsed'):tier2_keys.append(sensor_key)
  sensor_duty=st.slider('Tier 1 duty cycle (%)',0,100,100)/100
  profiles={}
  with st.expander('Sensor allocations and minimum selection parameters'):
@@ -83,10 +94,10 @@ with sizing_tab:
    rail=c.number_input('Supply rail (V)',min_value=1.,value=5.,key=key+'_rail')
    bus=st.selectbox('Sensor interface',['USB','I2C','SPI','UART','CAN','Ethernet','GPIO'],index=['USB','I2C','SPI','UART','CAN','Ethernet','GPIO'].index(interface),key=key+'_interface')
    perf={};gaps=[]
-   if key in ['visible','thermal']:
+   if key in ['visible','thermal','perch_camera']:
     a,b,c=st.columns(3)
-    perf={'pixels_x':a.number_input('Minimum image width (pixels)',1,10000,1280 if key=='visible' else 640,key=key+'_x'),
-          'pixels_y':b.number_input('Minimum image height (pixels)',1,10000,720 if key=='visible' else 480,key=key+'_y'),
+    perf={'pixels_x':a.number_input('Minimum image width (pixels)',1,10000,1280 if key in ['visible','perch_camera'] else 640,key=key+'_x'),
+          'pixels_y':b.number_input('Minimum image height (pixels)',1,10000,720 if key in ['visible','perch_camera'] else 480,key=key+'_y'),
           'fps':c.number_input('Minimum frame rate (Hz)',1,240,30,key=key+'_fps')}
     gaps=['Optics / scene coverage / image quality need definition'] if not st.checkbox('Generic imaging is sufficient; no additional optics/scene requirement',value=True,key=key+'_generic') else []
    elif key=='gnss':perf={'accuracy_m':st.number_input('Maximum position error (m)',min_value=.01,value=2.5,key=key+'_accuracy'),'update_hz':5.}
@@ -108,6 +119,35 @@ with sizing_tab:
      perf[attr]=st.number_input(caption,min_value=0.,value=value,key=key+'_'+attr)
     gaps=['Application performance requirements need confirmation'] if not st.checkbox('Use these entered measurement requirements for screening',value=True,key=key+'_screen') else []
    profiles[key]={'quantity':q,'mass_g':allocated,'active_w':active,'sleep_w':idle,'logged_mbps':logged,'supply_v':rail,'interface':bus,'performance':perf,'open_requirements':gaps}
+ st.subheader('Communications by mission phase')
+ st.caption('Checked channels are installed onboard and enabled in that phase. Passive ISR uses scheduled check-in windows; Active ISR uses anomaly-report windows. Enabling several channels counts all of them during each report window. Unchecked channels are powered off in that phase. These selections do not change the sensing tier definitions.')
+ comm_selection={phase:[] for phase in COMMS_PHASES}
+ with st.container(border=True):
+  cols=st.columns([2,1,1,1,1],gap='small')
+  for col,label in zip(cols,['Channel',*COMMS_PHASES.values()]):col.markdown('**'+label+'**')
+  for channel,defaults in COMMS_DEFAULTS.items():
+   cols=st.columns([2,1,1,1,1],gap='small',vertical_alignment='center')
+   cols[0].write(defaults['name'])
+   for col,phase in zip(cols[1:],COMMS_PHASES):
+    if col.checkbox(defaults['name']+' · '+COMMS_PHASES[phase],value=(channel=='rf' or phase!='flight'),key='comms_'+phase+'_'+channel,label_visibility='collapsed'):comm_selection[phase].append(channel)
+ comm_profiles={}
+ with st.expander('Communications mass and power allowances'):
+  st.caption('Provisional engineering allocations, not measured product specifications. Antenna allocations include channel-specific feed hardware; general wiring remains in the separate reserve. Mission-prep power is externally supplied before the 95% departure SOC check.')
+  for channel,defaults in COMMS_DEFAULTS.items():
+   st.markdown('**'+defaults['name']+'**');a,b,c=st.columns(3)
+   mass=a.number_input('Radio / modem mass (g)',min_value=0.,value=defaults['mass_g'],key='comms_mass_'+channel)
+   antenna=b.number_input('Antenna / feed mass (g)',min_value=0.,value=defaults['antenna_g'],key='comms_antenna_'+channel)
+   active=c.number_input('Active link power (W)',min_value=0.,value=defaults['active_w'],key='comms_power_'+channel)
+   a,b=st.columns(2)
+   idle=a.number_input('Perched standby power (W)',min_value=0.,value=defaults['sleep_w'],key='comms_idle_'+channel)
+   supply=b.number_input('Link supply rail (V)',min_value=1.,value=defaults['supply_v'],key='comms_supply_'+channel)
+   comm_profiles[channel]=dict(name=defaults['name'],mass_g=mass,antenna_g=antenna,active_w=active,sleep_w=idle,supply_v=supply)
+ try:comm_plan=communications_plan(comm_selection,comm_profiles)
+ except ValueError as e:st.error(str(e));st.stop()
+ if not comm_plan['phases']['flight']:st.info('No flight communications link selected: remote supervision is unavailable in this configuration. Autonomous flight/lost-link behavior still requires verification.')
+ if not comm_plan['phases']['passive']:st.info('No Passive ISR link selected: scheduled check-ins are disabled; sensor data is stored onboard.')
+ if not comm_plan['phases']['active']:st.info('No Active ISR link selected: anomaly reports are stored onboard for later retrieval.')
+ st.caption(f"Installed communications: {', '.join(COMMS_DEFAULTS[k]['name'] for k in comm_plan['installed']) or 'None'} · {comm_plan['mass_g']:.1f} g including antennas · flight link load {comm_plan['flight_w']:.2f} W.")
  with st.expander('Installation reserves and component selection assumptions'):
   a,b,c=st.columns(3)
   structure_g=a.number_input('Structure / mounting / mechanisms allocation (g)',min_value=0.,value=750.)
@@ -130,7 +170,8 @@ with sizing_tab:
   retention_days=b.number_input('Data retention (days)',min_value=1.,value=30.)
   gnss_accuracy=c.number_input('Flight GNSS maximum position error (m)',min_value=.01,value=2.5)
   frequency=a.number_input('Telemetry center frequency (MHz)',min_value=1.,value=915.)
-  radio_supply=b.number_input('Telemetry supply (V)',min_value=1.,value=24.)
+  radio_supply=comm_profiles['rf']['supply_v']
+  b.caption(f'RF supply rail: {radio_supply:g} V (set in communications allowances above).')
   link_mbps=c.number_input('Required application telemetry rate (Mbps)',min_value=.001,value=.1)
   st.caption('Structure allowance is split 65% enclosure/mounting and 35% perch/transformation mechanism. Wiring, fasteners and sealants are separate. Controller and field kit are outside the aircraft mass budget.')
   st.caption('Telemetry distance follows range per leg. Antenna-dependent installed range is not proved by a marketing range figure. Motors, ESCs and props require matched test data. Actuator torque must come from mechanism loads.')
@@ -145,10 +186,11 @@ with sizing_tab:
   compute_sleep_w=st.number_input('Payload computer sleep power (W)',min_value=0.,value=.05)
   flight_sleep_w=st.number_input('Flight controller sleep power (W)',min_value=0.,value=.02)
   gnss_sleep_w=st.number_input('GNSS standby power (W)',min_value=0.,value=.01)
-  radio_sleep_w=st.number_input('Communications standby power (W)',min_value=0.,value=.02)
+  radio_sleep_w=comm_plan['standby_w']
   st.caption('Flight/perching hardware stays installed; while secured, flight compute and GNSS sleep. Low-power sensor access and wake control are design requirements, not measured capabilities. Tier 1 imaging/RF/radar selections keep the payload computer awake at the selected duty cycle.')
+  st.caption(f"Selected flight communications add {comm_plan['flight_w']:.2f} W. Mission-prep communications draw {comm_plan['prep_w']:.2f} W from external ground power; no airborne mission energy is charged for preparation.")
   st.caption('Tier power is derived from selected sensors and computer/controller/navigation allowances.')
-  flight_electronics=st.number_input('Active flight electronics load (W)',min_value=0.,value=6.)
+  flight_electronics=st.number_input('Core flight electronics load, excluding selected comms (W)',min_value=0.,value=6.)
   profile_fraction=st.slider('Reference hover blade-profile power fraction',.01,.5,.15,.01)
   tip_speed_m_s=st.number_input('Reference rotor tip speed (m/s)',min_value=50.,max_value=300.,value=180.)
   st.caption(f'Flight air density is derived from initial elevation/temperature selectors: {rho:.3f} kg/m³. Density altitude: {density_altitude_m:,.0f} m / {density_altitude_m/.3048:,.0f} ft.')
@@ -159,8 +201,8 @@ with sizing_tab:
   charge_max_c=st.number_input('Maximum allowed battery charging temperature (°C)',value=45.)
   st.caption('Charging is disabled outside these pack-temperature limits. These are provisional limits; cell temperature is a separate assumption from ambient flight temperature.')
   charge_eff=st.slider('Net surplus charging efficiency',.5,1.,1.,.01)
-  st.caption('Flight electronics excludes propulsion. Solar harvest is DC-bus Wh; only surplus charges the battery. A 06:00–18:00 daylight profile is used with the selected average good/bad-day yield. Daily sensing/report activity is distributed over the day; exact event timing and weather sequences remain assumptions.')
-  radio=st.number_input('Active communications power (W)',min_value=0.,value=60.)
+  st.caption('Core flight electronics excludes propulsion and communications; selected flight links are added separately. Solar harvest is DC-bus Wh; only surplus charges the battery. A 06:00–18:00 daylight profile is used with the selected average good/bad-day yield. Daily sensing/report activity is distributed over the day; exact event timing and weather sequences remain assumptions.')
+  radio=comm_plan['peak_perched_w']
   duration=st.number_input('Minutes per scheduled check-in',min_value=0.,value=1.)
   events=st.number_input('Anomaly reports per day',min_value=0.,value=2.)
   event_duration=st.number_input('Minutes per anomaly report',min_value=0.,value=1.)
@@ -181,23 +223,26 @@ with sizing_tab:
   nominal_v=st.number_input('Assumed nominal battery voltage (V)',min_value=18.,max_value=60.,value=24.,step=1.)
 
 
-settings=dict(temp_min_c=temp_low,temp_max_c=temp_high,structure_g=structure_g,wires_g=wires_g,fasteners_g=fasteners_g,sealants_g=sealants_g,growth_g=growth_g,regulator_g=regulator_g,navigation_g=navigation_g,servo_qty=servo_qty,servo_g=servo_g,servo_torque_kgcm=servo_torque,servo_v=servo_v,bus_max_v=bus_max,current_margin=current_margin,compute_w=compute_w,autopilot_w=autopilot_w,ram_gb=ram_gb,retention_days=retention_days,gnss_accuracy_m=gnss_accuracy,radio_w=radio,radio_supply_v=radio_supply,link_range_km=distance*1.609344,link_mbps=link_mbps,frequency_mhz=frequency)
+settings=dict(communications=comm_plan,temp_min_c=temp_low,temp_max_c=temp_high,structure_g=structure_g,wires_g=wires_g,fasteners_g=fasteners_g,sealants_g=sealants_g,growth_g=growth_g,regulator_g=regulator_g,navigation_g=navigation_g,servo_qty=servo_qty,servo_g=servo_g,servo_torque_kgcm=servo_torque,servo_v=servo_v,bus_max_v=bus_max,current_margin=current_margin,compute_w=compute_w,autopilot_w=autopilot_w,ram_gb=ram_gb,retention_days=retention_days,gnss_accuracy_m=gnss_accuracy,radio_w=radio,radio_supply_v=radio_supply,link_range_km=distance*1.609344,link_mbps=link_mbps,frequency_mhz=frequency)
 try:
  if bus_max<nominal_v:raise ValueError('Maximum bus voltage must not be below nominal battery voltage.')
  plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,0.)
  power_states=operating_power(plan,housekeeping_w=housekeeping_extra,compute_active_w=compute_w,compute_sleep_w=compute_sleep_w,flight_sleep_w=flight_sleep_w,gnss_sleep_w=gnss_sleep_w,radio_active_w=radio,radio_sleep_w=radio_sleep_w)
+ schedule=communications_schedule(comm_plan,power_states,checkins,duration,events,event_duration)
+ plan['communications']=comm_plan
+ plan['communications_schedule']=schedule
  plan['power_states']=power_states
 except ValueError as e:st.error(str(e));st.stop()
 t1,t2=power_states['tier1_w'],power_states['tier2_w']
-comms_increment=power_states['comms_increment_w']
+comms_increment=schedule['equivalent_increment_w']
 installation_kg=(structure_g+wires_g+fasteners_g+sealants_g+growth_g+regulator_g+navigation_g+servo_qty*servo_g+FIXED_PERCH_SENSOR_G)/1000
-fixed_nonbattery=installation_kg+1.05+.22+.87+.25+plan['sensor_kg']
-component_inputs=dict(sensor_kg=plan['sensor_kg'],minimum_other_kg=installation_kg)
+fixed_nonbattery=installation_kg+1.05+.22+comm_plan['mass_g']/1000+.25+plan['sensor_kg']
+component_inputs=dict(comms_kg=comm_plan['mass_g']/1000,sensor_kg=plan['sensor_kg'],minimum_other_kg=installation_kg)
 with sizing_tab:
  st.caption(f"Derived stationary loads: Tier 1 + housekeeping {t1:.2f} W; Tier 2 active increment {t2:.2f} W. Selected sensors: {plan['sensor_kg']*1000:.1f} g. Logged data: {plan['daily_gb']:.3f} GB/day.")
- st.dataframe(pd.DataFrame([{'Power state':'Tier 1 + standby','Daily energy (Wh)':t1*24},{'Power state':'Tier 2 sensors + compute wake','Daily energy (Wh)':t2*tier2/60},{'Power state':'Scheduled communications + compute wake','Daily energy (Wh)':comms_increment*checkins*duration/60},{'Power state':'Anomaly reports + compute wake','Daily energy (Wh)':comms_increment*events*event_duration/60}]),hide_index=True,width='stretch')
+ st.dataframe(pd.DataFrame([{'Power state':'Tier 1 + standby','Daily energy (Wh)':t1*24},{'Power state':'Tier 2 sensors + compute wake','Daily energy (Wh)':t2*tier2/60},{'Power state':'Scheduled communications + compute wake','Daily energy (Wh)':schedule['scheduled_wh_day']},{'Power state':'Anomaly reports + compute wake','Daily energy (Wh)':schedule['event_wh_day']}]),hide_index=True,width='stretch')
 
-model_inputs=dict(manage_sleep=True,sleep_w=node_sleep_w,sleep_margin_wh=node_sleep_margin,wake_margin_wh=node_wake_margin,profile_fraction=profile_fraction,tip_speed_m_s=tip_speed_m_s,charge_temperature_c=charge_temperature_c,charge_min_c=charge_min_c,charge_max_c=charge_max_c,flight_electronics_w=flight_electronics,rho=rho,arrival_hour=arrival_hour,charge_limit_w=charge_limit_w,charge_eff=charge_eff,**component_inputs,good_pct=good,checkins=checkins,tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=events,event_min=event_duration,wake_wh=sleep,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
+model_inputs=dict(manage_sleep=True,sleep_w=node_sleep_w,sleep_margin_wh=node_sleep_margin,wake_margin_wh=node_wake_margin,profile_fraction=profile_fraction,tip_speed_m_s=tip_speed_m_s,charge_temperature_c=charge_temperature_c,charge_min_c=charge_min_c,charge_max_c=charge_max_c,flight_electronics_w=flight_electronics+comm_plan['flight_w'],rho=rho,arrival_hour=arrival_hour,charge_limit_w=charge_limit_w,charge_eff=charge_eff,**component_inputs,good_pct=good,checkins=schedule['checkins'],tier2_min_day=tier2,good_wh=good_wh,bad_wh=bad_wh,checkin_min=duration,events_day=schedule['events'],event_min=event_duration,wake_wh=sleep if comm_plan['phases']['passive'] or comm_plan['phases']['active'] else 0.,tier1_w=t1,tier2_w=t2,comms_w=comms_increment,wind=wind,speed=speed,whkg=whkg,derate=derate)
 from payload_sizing import size_payload
 current=size_payload(payload_kg,distance,hours,hardware_kg=fixed_nonbattery-plan['sensor_kg'],**model_inputs)
 if current is None:
@@ -355,7 +400,7 @@ with mission_tab:
  st.info('Mass includes payload. Battery sizing depends on flight, not perched duration or activity. Peak flight power and battery mass remain coupled. The daylight profile uses an average good/bad-day yield; a string of bad days may still fail. Six-hour missions use fractional-day schedules. Tier 2/radio loads are incremental. No supplier capabilities are assumed.')
  if 'mission_scenarios' not in st.session_state: st.session_state.mission_scenarios=[]
  name=st.text_input('Trade name','Mission concept')
- record={'name':name,'atmosphere':atmosphere,'mission':{'planning_headwind_m_s':wind_ms,'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
+ record={'name':name,'atmosphere':atmosphere,'communications':comm_plan,'communications_schedule':schedule,'mission':{'planning_headwind_m_s':wind_ms,'site_elevation_m':elevation_m,'density_altitude_m':density_altitude_m,'payload_kg':payload_kg,'mass_lb':mass,'range_mi':distance,'hours':hours,'perched_days':hours/24,'good_solar_pct':good,'checkins_day':checkins,'tier2_min_day':tier2,'battery_fraction':fraction,'temperature_min_c':temp_low,'temperature_max_c':temp_high,'temperature_capacity_factor':temperature_factor,'aging_capacity_factor':age_factor,'good_wh_day':good_wh,'bad_wh_day':bad_wh,'tier1_w':t1,'tier2_w':t2,'comms_w':comms_increment,'radio_active_w':radio,'checkin_min':duration,'anomaly_reports_day':events,'event_min':event_duration,'sleep_report_wh':sleep,'reposition_mi':hop},'results':{k:v for k,v in r.items() if k!='engineering'},'engineering':r['engineering'],'component_plan':plan,'component_settings':settings}
  if st.button('Save mission to comparison'):
   st.session_state.mission_scenarios=[x for x in st.session_state.mission_scenarios if x['name']!=name]+[record]
  if st.session_state.mission_scenarios:
@@ -426,10 +471,7 @@ with bom_tab:
  sourcing=st.selectbox('Component sourcing',['NDAA + Blue UAS evidence required','Unrestricted sourcing'])
  st.caption('Controlled sourcing requires source-backed NDAA evidence AND model-specific Blue UAS Framework evidence. Manufacturer declarations are identified as such; they do not constitute aircraft approval. Unrestricted sourcing removes those two gates; it does not mean a product is noncompliant. Unknown specifications are never a match.')
  catalog=json.loads((Path(__file__).parent/'catalog.json').read_text())
- # Execute the local screener afresh: a warm Streamlit process may retain an older
- # imported module while app.py and catalog.json have already updated.
- from runpy import run_path
- current_match=run_path(str(Path(__file__).parent/'components.py'))['match']
+ current_match=match
  matches=current_match(allocated['rows'],catalog,sourcing.startswith('NDAA'))
  st.caption(f"Sizing for: {selected}. Catalog source checks through {max(p['checked_on'] for p in catalog)}; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
  st.dataframe(pd.DataFrame([{'Component':m['row']['component'],'Qty':m['row']['quantity'],'Mass each (g)':round(m['row']['mass_each_g'],2),'Mass row (g)':round(m['row']['mass_total_g'],2),'Option 1':m['options'][0]['name'] if len(m['options'])>0 else '', 'Option 2':m['options'][1]['name'] if len(m['options'])>1 else '', 'Option 3':m['options'][2]['name'] if len(m['options'])>2 else '', 'Potential 1':m['candidates'][0]['product']['name'] if len(m['candidates'])>0 else '', 'Potential 2':m['candidates'][1]['product']['name'] if len(m['candidates'])>1 else '', 'Potential 3':m['candidates'][2]['product']['name'] if len(m['candidates'])>2 else '', 'Status':m['status']} for m in matches]),hide_index=True,width='stretch')
@@ -437,6 +479,7 @@ with bom_tab:
  for item in matches:
   if not item['row']['sourcing']:continue
   with st.expander(item['row']['component']+' · '+item['status']):
+   if item['row'].get('mission_phases'):st.caption('Enabled phases: '+', '.join(item['row']['mission_phases']))
    st.write('**Requirements**');st.json(metric_view(item['row']['requirements']))
    if item['row']['open_requirements']:st.write('**Still to define / verify:** '+'; '.join(item['row']['open_requirements']))
    for product in item['options']:
