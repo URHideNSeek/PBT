@@ -229,6 +229,7 @@ try:
  plan=sensor_plan(tier1_keys,tier2_keys,profiles,sensor_duty,tier2,0.)
  power_states=operating_power(plan,housekeeping_w=housekeeping_extra,compute_active_w=compute_w,compute_sleep_w=compute_sleep_w,flight_sleep_w=flight_sleep_w,gnss_sleep_w=gnss_sleep_w,radio_active_w=radio,radio_sleep_w=radio_sleep_w)
  schedule=communications_schedule(comm_plan,power_states,checkins,duration,events,event_duration)
+ plan['configuration_schema']='phase-comms-landing-v1'
  plan['communications']=comm_plan
  plan['communications_schedule']=schedule
  plan['power_states']=power_states
@@ -422,8 +423,8 @@ with sizing_tab:
  if selected.startswith('Saved: '):
   chosen=next(x for x in st.session_state.mission_scenarios if 'Saved: '+x['name']==selected)
   target=chosen['results'] | {'engineering':chosen['engineering']}
-  if 'component_plan' not in chosen:
-   st.warning('This older saved trade has no sensor/BOM snapshot. Re-save it under the new configuration before sourcing.');st.stop()
+  if 'component_plan' not in chosen or chosen['component_plan'].get('configuration_schema')!='phase-comms-landing-v1':
+   st.warning('This saved trade predates the separate landing/ISR camera and communications configuration. Re-save it under the current configuration before sourcing.');st.stop()
   target_plan=chosen['component_plan'];target_settings=chosen['component_settings']
   st.caption('Saved mission parameters are frozen; CT and nominal-voltage assumptions below apply to this sizing view.')
  if selected=='Envelope point':
