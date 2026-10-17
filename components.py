@@ -10,7 +10,7 @@ SENSORS={
  'light':('Ambient light',5.,.02,.001,.00001,'I2C'),
  'acoustic':('Acoustic microphone',15.,.3,.01,.256,'USB'),
  'vibration':('Vibration / accelerometer',8.,.05,.001,.005,'SPI'),
- 'visible':('Visible camera',30.,2.,.02,2.,'USB'),
+ 'visible':('Visual ISR camera',30.,2.,.02,2.,'USB'),
  'thermal':('Thermal camera',50.,2.,.02,1.,'USB'),
  'range':('Rangefinder',20.,.5,.01,.002,'UART'),
  'gnss':('Mission GNSS receiver',30.,.5,.01,.001,'UART'),
@@ -19,7 +19,7 @@ SENSORS={
 }
 
 REQUIRED_SENSOR_HOSTS={
- 'imu':'FCS','compass':'GPS','pressure':'FCS','gnss':'GPS','visible':'NAVCAM',
+ 'imu':'FCS','compass':'GPS','pressure':'FCS','gnss':'GPS','perch_camera':'NAVCAM',
  'range':'PRNG','contact':'PCT','latch':'LCK','battery_health':'BAT',
 }
 # Required devices' mass is already in their host BOM row. Host electronics power
@@ -30,7 +30,7 @@ SENSORS={
  'compass':('Magnetometer / compass',0.,0.,0.,.001,'UART'),
  'pressure':('Barometer',0.,0.,0.,.00001,'UART'),
  'gnss':('Flight GNSS receiver',0.,1.5,0.,.001,'CAN'),
- 'visible':('Navigation / perch camera',0.,1.5,.02,2.,'USB'),
+ 'perch_camera':('Perch camera — landing only',0.,1.5,0.,0.,'USB'),
  'range':('Perch distance sensor',0.,.5,.01,.002,'UART'),
  'contact':('Perch contact sensor',0.,.01,.005,.00001,'GPIO'),
  'latch':('Grip / latch position sensor',0.,.01,.005,.00001,'GPIO'),
@@ -42,6 +42,7 @@ FIXED_PERCH_SENSOR_G=30.
 FIXED_PERCH_SENSOR_SLEEP_W=.02
 
 def sensor_plan(tier1,tier2,profiles,duty,tier2_min_day,base_w):
+ if 'perch_camera' in tier1 or 'perch_camera' in tier2:raise ValueError('The perch camera is landing-only; select the visual ISR camera for Tier 1 or Tier 2.')
  if not 0<=duty<=1 or not 0<=tier2_min_day<=1440 or base_w<0:raise ValueError('Invalid sensor duty or base power')
  t2_fraction=tier2_min_day/1440
  keys=list(dict.fromkeys([*[k for k in REQUIRED_SENSOR_HOSTS if k in profiles],*tier1,*tier2]));devices=[]
@@ -90,6 +91,56 @@ def operating_power(plan,*,housekeeping_w=1.,compute_active_w=3.,compute_sleep_w
          'compute_active_w':compute_active_w,'compute_sleep_w':compute_sleep_w,
          'radio_active_w':radio_active_w,'assumption':'Independent overlapping Tier2/communications compute wake windows; low-power sensor polling available while flight control sleeps'}
 
+COMMS_PHASES={'prep':'Mission prep','flight':'Flight / perching','passive':'Passive ISR (Tier 1)','active':'Active ISR (Tier 2)'}
+COMMS_DEFAULTS={
+ 'rf':dict(name='RF / mesh',mass_g=104.4,antenna_g=87.,active_w=8.,sleep_w=.02,supply_v=24.),
+ 'cellular':dict(name='Cellular',mass_g=104.4,antenna_g=87.,active_w=5.,sleep_w=.02,supply_v=5.),
+ 'satcom':dict(name='Satcom',mass_g=400.2,antenna_g=87.,active_w=15.,sleep_w=.02,supply_v=24.),
+}
+
+def communications_plan(selection,profiles):
+ """Union of phase selections determines installed hardware, counted once.
+ Enabled links operate concurrently during report windows. Disabled links are
+ power-gated; perched links retain their allocated standby draw between reports.
+ Mission-prep energy is supplied on the ground, before the departure SOC gate.
+ """
+ if set(selection)-set(COMMS_PHASES):raise ValueError('Unknown communications phase')
+ phases={phase:list(dict.fromkeys(selection.get(phase,[]))) for phase in COMMS_PHASES}
+ if any(set(keys)-set(COMMS_DEFAULTS) for keys in phases.values()):raise ValueError('Unknown communications channel')
+ installed=[key for key in COMMS_DEFAULTS if any(key in keys for keys in phases.values())]
+ devices={}
+ for key in installed:
+  d=dict(profiles[key])
+  for field in ['mass_g','antenna_g','active_w','sleep_w','supply_v']:
+   if not isfinite(d[field]) or d[field]<0:raise ValueError('Invalid communications allocation: '+field)
+  if d['supply_v']<=0 or d['sleep_w']>d['active_w']:raise ValueError('Invalid communications supply or sleep power')
+  devices[key]=d
+ standby=sum(devices[k]['sleep_w'] for k in installed if k in phases['passive'] or k in phases['active'])
+ increments={phase:sum(devices[k]['active_w']-devices[k]['sleep_w'] for k in phases[phase]) for phase in ['passive','active']}
+ return dict(phases=phases,devices=devices,installed=installed,
+             mass_g=sum(d['mass_g']+d['antenna_g'] for d in devices.values()),
+             antenna_g=sum(d['antenna_g'] for d in devices.values()),
+             standby_w=standby,phase_increment_w=increments,
+             peak_perched_w=standby+max(increments.values()),
+             flight_w=sum(devices[k]['active_w'] for k in phases['flight']),
+             prep_w=sum(devices[k]['active_w'] for k in phases['prep']))
+
+def communications_schedule(comms,power,checkins,checkin_min,events,event_min):
+ """Equivalent average report power preserves separate scheduled/event energies.
+ The chronological engine distributes report minutes over the day; enabling a
+ channel does not imply transmitting throughout the entire sensing tier.
+ """
+ if any(not isfinite(x) or x<0 for x in [checkins,checkin_min,events,event_min]):raise ValueError('Invalid communications schedule')
+ counts={'scheduled':checkins if comms['phases']['passive'] else 0.,'events':events if comms['phases']['active'] else 0.}
+ minutes={'scheduled':counts['scheduled']*checkin_min,'events':counts['events']*event_min}
+ if sum(minutes.values())>1440:raise ValueError('Communications activity exceeds 24 hours per day')
+ increments={kind:(comms['phase_increment_w'][phase]+power['comms_compute_increment_w']) if comms['phases'][phase] else 0. for kind,phase in [('scheduled','passive'),('events','active')]}
+ energy={kind:increments[kind]*minutes[kind]/60 for kind in minutes}
+ total=sum(minutes.values())
+ return dict(checkins=counts['scheduled'],events=counts['events'],scheduled_w=increments['scheduled'],event_w=increments['events'],
+             scheduled_wh_day=energy['scheduled'],event_wh_day=energy['events'],
+             equivalent_increment_w=sum(energy.values())*60/total if total else 0.)
+
 def constraint(op,value):return {'op':op,'value':value}
 
 def bom(result,sizing,plan,settings):
@@ -137,7 +188,7 @@ def bom(result,sizing,plan,settings):
  data_mbps=sum(d['logged_mbps']*d['quantity'] for d in plan['devices'])
  add('MEM','Data storage','storage',1,comp_g*.1,{'capacity_gb':constraint('>=',storage),
   'write_mbps':constraint('>=',data_mbps*1.25),'interface':constraint('in',['microSD','USB','NVMe'])})
- add('NAVCAM','Navigation / perch camera','visible',1,comp_g*.15,{**rail(5.),'active_w':constraint('<=',1.5),'interface':constraint('in',['USB','CSI']),
+ add('NAVCAM','Perch camera — landing only','visible',1,comp_g*.15,{**rail(5.),'active_w':constraint('<=',1.5),'interface':constraint('in',['USB','CSI']),
   'pixels_x':constraint('>=',1280),'pixels_y':constraint('>=',720),'fps':constraint('>=',30)},['Perch detection, field of view, low light and landing accuracy need definition'])
  add('GPS','Flight GNSS / compass','gnss',1,settings['navigation_g'],{**rail(5.),'active_w':constraint('<=',1.5),'accuracy_m':constraint('<=',settings['gnss_accuracy_m']),
   'update_hz':constraint('>=',5.),'interface':constraint('in',['UART','CAN']),'compass':constraint('==',True)})
@@ -146,15 +197,28 @@ def bom(result,sizing,plan,settings):
  add('PCT','Required perch contact sensor','contact',1,5.,{'interface':constraint('==','GPIO')},['Contact force/travel and debounce requirements need mechanism definition'])
  add('LCK','Required grip / latch position sensor','position_sensor',1,5.,{'interface':constraint('==','GPIO')},['Locked-position tolerance, independent secured-state verification and mechanism interface'])
  comm_g=p['comms_kg']*1000
- add('RF','Terrestrial mesh radio','radio',1,comm_g*.12,{**rail(settings['radio_supply_v']),'active_w':constraint('<=',settings['radio_w']),
-  'frequency_min_mhz':constraint('<=',settings['frequency_mhz']),'frequency_max_mhz':constraint('>=',settings['frequency_mhz']),
-  'application_mbps':constraint('>=',settings['link_mbps']),'installed_range_km':constraint('>=',settings['link_range_km']),
-  'mesh_nodes':constraint('>=',6)},['Installed link budget with antennas, obscuration and selected band; peer/controller radio required'])
- add('LTE','Cellular modem','cellular',1,comm_g*.12,{**rail(5.),'active_w':constraint('<=',settings['radio_w']),
-  'application_mbps':constraint('>=',settings['link_mbps']),'interface':constraint('in',['USB','Ethernet'])},['Carrier, coverage, certified bands, SIM and antenna installation'])
- add('SAT','Satellite modem / terminal','satcom',1,comm_g*.46,{**rail(settings['radio_supply_v']),'active_w':constraint('<=',settings['radio_w']),
-  'application_mbps':constraint('>=',settings['link_mbps'])},['Satellite service, sky view, packet size/latency and installed antenna compatibility'])
- add('ANT','Communications antenna set','antenna_set',1,comm_g*.30,{'frequency_mhz':constraint('contains',settings['frequency_mhz'])},['Antenna gain/pattern, coax loss, LTE/SAT bands and mechanical envelope need allocation'])
+ comm=settings.get('communications')
+ installed=comm['installed'] if comm else ['rf','cellular','satcom']
+ def comm_mass(key,fraction):return comm['devices'][key]['mass_g'] if comm else comm_g*fraction
+ def comm_power(key):return comm['devices'][key]['active_w'] if comm else settings['radio_w']
+ def comm_rail(key,fallback):return rail(comm['devices'][key]['supply_v'] if comm else fallback)
+ if 'rf' in installed:
+  add('RF','Terrestrial mesh radio','radio',1,comm_mass('rf',.12),{**comm_rail('rf',settings['radio_supply_v']),'active_w':constraint('<=',comm_power('rf')),
+   'frequency_min_mhz':constraint('<=',settings['frequency_mhz']),'frequency_max_mhz':constraint('>=',settings['frequency_mhz']),
+   'application_mbps':constraint('>=',settings['link_mbps']),'installed_range_km':constraint('>=',settings['link_range_km']),
+   'mesh_nodes':constraint('>=',6)},['Installed link budget with antennas, obscuration and selected band; peer/controller radio required'])
+ if 'cellular' in installed:
+  add('LTE','Cellular modem','cellular',1,comm_mass('cellular',.12),{**comm_rail('cellular',5.),'active_w':constraint('<=',comm_power('cellular')),
+   'application_mbps':constraint('>=',settings['link_mbps']),'interface':constraint('in',['USB','Ethernet'])},['Carrier, coverage, certified bands, SIM and antenna installation'])
+ if 'satcom' in installed:
+  add('SAT','Satellite modem / terminal','satcom',1,comm_mass('satcom',.46),{**comm_rail('satcom',settings['radio_supply_v']),'active_w':constraint('<=',comm_power('satcom')),
+   'application_mbps':constraint('>=',settings['link_mbps'])},['Satellite service, sky view, packet size/latency and installed antenna compatibility'])
+ if installed:
+  add('ANT','Communications antenna set','antenna_set',1,comm['antenna_g'] if comm else comm_g*.30,({'frequency_mhz':constraint('contains',settings['frequency_mhz'])} if 'rf' in installed else {}),['Antenna gain/pattern, coax loss, LTE/SAT bands and mechanical envelope need allocation'])
+ if comm:
+  for id,key in [('RF','rf'),('LTE','cellular'),('SAT','satcom')]:
+   row=next((r for r in rows if r['id']==id),None)
+   if row is not None:row['mission_phases']=[COMMS_PHASES[phase] for phase,keys in comm['phases'].items() if key in keys]
  sol_g=p['solar_kg']*1000
  add('SOL','Solar cells / array','solar',1,sol_g*.72,{'installed_peak_w':constraint('>=',sizing['estimated_peak_battery_delivered_solar_w']/p['charger_eff']),
   'fit_area_m2':constraint('<=',sizing['active_solar_area_m2']),'fits_circular_diameter_in':constraint('<=',p['solar'])},['Installed array packing, IV curve, orientation and daily battery-delivered harvest qualification'])
@@ -166,7 +230,7 @@ def bom(result,sizing,plan,settings):
   station_peak=ps['tier1_w']+ps['tier2_w']+ps['radio_active_w']-ps['radio_sleep_w']+max(0.,ps['compute_active_w']-ps['computer_baseline_w']-ps['tier2_compute_increment_w'])
  else:station_peak=plan['tier1_w']+plan['tier2_w']+settings['radio_w']
  add('PWR','Power conversion / distribution','power',1,settings['regulator_g'],{**bus(),
-  'output_power_w':constraint('>=',station_peak*margin),'output_rails_v':constraint('contains_all',sorted(set([5.,settings['servo_v']]+[d['supply_v'] for d in plan['devices']])))},['Branch current/inrush and actuator supply draw; protective devices and connector pinouts'])
+  'output_power_w':constraint('>=',station_peak*margin),'output_rails_v':constraint('contains_all',sorted(set([5.,settings['servo_v']]+[d['supply_v'] for d in plan['devices']]+([d['supply_v'] for d in comm['devices'].values()] if comm else []))))},['Branch current/inrush and actuator supply draw; protective devices and connector pinouts'])
  add('ACT','Perch / transformation actuators','actuator',settings['servo_qty'],settings['servo_qty']*settings['servo_g'],{**rail(settings['servo_v']),
   'torque_kgcm':constraint('>=',settings['servo_torque_kgcm']),'interface':constraint('==','PWM')},['Travel/speed, holding duty, actuator peak current, linkage loads and secured latch verification'])
  for d in plan['devices']:
@@ -193,7 +257,10 @@ def bom(result,sizing,plan,settings):
  if 'power_states' in plan:
   states=plan['power_states']
   for host,limit in [('FCS',states['flight_sleep_w']),('CMP',states['compute_sleep_w']),('GPS',states['gnss_sleep_w']),('RF',states['radio_sleep_w'])]:
-   row=next(x for x in rows if x['id']==host);row['requirements']['sleep_w']=constraint('<=',limit)
+   row=next((x for x in rows if x['id']==host),None)
+   if row is not None:
+    if host=='RF' and comm:limit=comm['devices']['rf']['sleep_w']
+    row['requirements']['sleep_w']=constraint('<=',limit)
  total=sum(r['mass_total_g'] for r in rows);flight=result['mass_lb']*.45359237*1000
  return {'rows':rows,'allocated_g':total,'flight_ready_g':flight,'margin_g':flight-total,'closed':total<=flight+1e-6,'storage_required_gb':storage,'peak_station_w':station_peak,'status':'Allocations and provisional selection requirements'}
 
