@@ -52,7 +52,7 @@ from pathlib import Path
 from runpy import run_path
 # Load this UI/model contract together on every rerun, including warm deployments.
 component_api=run_path(str(Path(__file__).parent/'components.py'))
-SENSORS, sensor_plan, operating_power, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W, COMMS_PHASES, COMMS_DEFAULTS, communications_plan, communications_schedule=(component_api[name] for name in ('SENSORS','sensor_plan','operating_power','bom','match','REQUIRED_SENSOR_HOSTS','FIXED_PERCH_SENSOR_G','FIXED_PERCH_SENSOR_SLEEP_W','COMMS_PHASES','COMMS_DEFAULTS','communications_plan','communications_schedule'))
+SENSORS, sensor_plan, operating_power, bom, match, REQUIRED_SENSOR_HOSTS, FIXED_PERCH_SENSOR_G, FIXED_PERCH_SENSOR_SLEEP_W, COMMS_PHASES, COMMS_DEFAULTS, communications_plan, communications_schedule, procurement_rows=(component_api[name] for name in ('SENSORS','sensor_plan','operating_power','bom','match','REQUIRED_SENSOR_HOSTS','FIXED_PERCH_SENSOR_G','FIXED_PERCH_SENSOR_SLEEP_W','COMMS_PHASES','COMMS_DEFAULTS','communications_plan','communications_schedule','procurement_rows'))
 if st.session_state.get('camera_role_version')!='landing-only-v1':
  st.session_state['sensor_t1_visible']=False
  st.session_state['sensor_t2_visible']=False
@@ -473,8 +473,19 @@ with bom_tab:
  st.caption('Controlled sourcing requires source-backed NDAA evidence AND model-specific Blue UAS Framework evidence. Manufacturer declarations are identified as such; they do not constitute aircraft approval. Unrestricted sourcing removes those two gates; it does not mean a product is noncompliant. Unknown specifications are never a match.')
  catalog=json.loads((Path(__file__).parent/'catalog.json').read_text())
  current_match=match
+ st.subheader('Partner component and lead-time register')
+ st.caption('Partner records imported October 29, 2026. These are dated supplier reports and historical quotes, not refreshed stock or delivery commitments. Unknown lead times remain unknown. Exact NDAA and Blue evidence are evaluated separately from delivery.')
+ partner_only=st.checkbox('Show partner updates and lifecycle alerts only',value=True,key='partner_updates_only')
+ register=[p for p in catalog if not partner_only or p.get('procurement',{}).get('basis')!='No supplier-specific lead-time evidence imported']
+ st.dataframe(pd.DataFrame(procurement_rows(register)),hide_index=True,width='stretch')
+ st.download_button('Download supplier lead-time register',json.dumps({'reviewed_on':'2026-10-29','notice':'Historical reports, not current supplier commitments','products':register},indent=2),'supplier_lead_times.json')
+ def show_procurement(product):
+  if product.get('procurement'):
+   st.write('**Supplier availability / quote evidence**');st.json(product['procurement'])
+  if product.get('reported_history'):
+   st.write('**Unverified historical reports — original quote needs recovery**');st.json(product['reported_history'])
  matches=current_match(allocated['rows'],catalog,sourcing.startswith('NDAA'))
- st.caption(f"Sizing for: {selected}. Catalog source checks through {max(p['checked_on'] for p in catalog)}; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
+ st.caption(f"Sizing for: {selected}. Catalog record reviews through {max(p['checked_on'] for p in catalog)}; {len(catalog)} named candidates. This is a curated evidence catalog, not an exhaustive live search. New products require source-backed catalog entries.")
  st.dataframe(pd.DataFrame([{'Component':m['row']['component'],'Qty':m['row']['quantity'],'Mass each (g)':round(m['row']['mass_each_g'],2),'Mass row (g)':round(m['row']['mass_total_g'],2),'Option 1':m['options'][0]['name'] if len(m['options'])>0 else '', 'Option 2':m['options'][1]['name'] if len(m['options'])>1 else '', 'Option 3':m['options'][2]['name'] if len(m['options'])>2 else '', 'Potential 1':m['candidates'][0]['product']['name'] if len(m['candidates'])>0 else '', 'Potential 2':m['candidates'][1]['product']['name'] if len(m['candidates'])>1 else '', 'Potential 3':m['candidates'][2]['product']['name'] if len(m['candidates'])>2 else '', 'Status':m['status']} for m in matches]),hide_index=True,width='stretch')
  if not allocated['closed']:st.error('Mass closure fails. Individual parameter matches below do not constitute a viable assembled BOM.')
  for item in matches:
@@ -485,18 +496,21 @@ with bom_tab:
    if item['row']['open_requirements']:st.write('**Still to define / verify:** '+'; '.join(item['row']['open_requirements']))
    for product in item['options']:
     st.markdown('**'+product['name']+'**');st.link_button('Manufacturer evidence',product['source_url']);st.json(metric_view(product['attributes']));st.caption(product.get('notes',''))
+    show_procurement(product)
     st.caption('NDAA evidence: '+str(product.get('ndaa_source_url') or 'Not established')+' · Blue evidence: '+str(product.get('blue_source_url') or 'Not established'))
    if not item['options']:st.write('No product with complete evidence meets this row under the active constraints.')
    for entry in item['candidates']:
     product=entry['product']
     st.markdown('**Potential candidate — verification needed: '+product['name']+'**')
-    st.caption(product.get('qualification','COTS candidate')+' · Source checked '+product['checked_on'])
+    st.caption(product.get('qualification','COTS candidate')+' · Record reviewed '+product['checked_on'])
     st.write('; '.join(entry['reasons']))
     st.json(metric_view(product['attributes']));st.caption(product.get('notes',''))
     st.link_button('Candidate evidence',product['source_url'],key='pending_'+item['row']['id']+'_'+product['id'])
+    show_procurement(product)
     st.caption('NDAA evidence: '+str(product.get('ndaa_source_url') or 'Not established')+' · Blue evidence: '+str(product.get('blue_source_url') or 'Not established'))
    for entry in item['rejected']:
     st.markdown('**Candidate, excluded: '+entry['product']['name']+'**')
+    show_procurement(entry['product'])
     st.write('; '.join(entry['reasons']));st.link_button('Candidate source',entry['product']['source_url'],key='source_'+item['row']['id']+'_'+entry['product']['id'])
    if not item['options'] and not item['candidates'] and not item['rejected']:st.caption('Catalog gap: no sourced candidate entered for this category yet. Request vendor data for the requirements above.')
  count=sum(bool(x['options']) for x in matches if x['row']['sourcing']);needed=sum(x['row']['sourcing'] for x in matches)
