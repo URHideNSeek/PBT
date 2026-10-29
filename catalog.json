@@ -29,7 +29,25 @@
     "ndaa": true,
     "blue": true,
     "ndaa_source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/",
-    "blue_source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/"
+    "blue_source_url": "https://arkelectron.com/product/ark-fpv-flight-controller/",
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ark-4in1",
@@ -55,7 +73,25 @@
     "ndaa": true,
     "blue": true,
     "ndaa_source_url": "https://arkelectron.com/product/ark-4in1-esc/",
-    "blue_source_url": "https://arkelectron.com/product/ark-4in1-esc/"
+    "blue_source_url": "https://arkelectron.com/product/ark-4in1-esc/",
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "pixhawk-6c-mini",
@@ -86,7 +122,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "voxl2",
@@ -110,7 +164,25 @@
     "ndaa": true,
     "blue": null,
     "ndaa_source_url": "https://www.modalai.com/products/voxl-2",
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ark-gps",
@@ -131,7 +203,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "doodle-mini",
@@ -154,7 +244,29 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-09-25",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        2,
+        4
+      ],
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "September 25 call/Fathom recap: from payment. Exact frequency SKU, quantity, current stock and dated written quote required. Historical Mouser stock is not current stock.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29",
+        "section": "September 25 Doodle Labs call notes"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "tattu16",
@@ -176,7 +288,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "tattu16-30",
@@ -197,7 +327,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "mn4014-330",
@@ -217,7 +365,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "mn4014-400",
@@ -237,7 +403,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "apc-1154",
@@ -255,7 +439,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ada-sht45",
@@ -277,7 +479,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ada-bmp390",
@@ -299,7 +519,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ada-veml",
@@ -318,7 +556,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "samsung64",
@@ -340,7 +596,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "samsung128",
@@ -362,7 +636,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "samsung256",
@@ -384,7 +676,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "camera3",
@@ -405,7 +715,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "lepton35",
@@ -424,7 +752,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "tfmini",
@@ -448,7 +794,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "hackrf",
@@ -469,7 +833,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "pluto",
@@ -491,7 +873,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "eg25",
@@ -508,7 +908,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "pololu",
@@ -529,7 +947,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "savox",
@@ -546,7 +982,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "volz",
@@ -563,7 +1017,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "respeaker",
@@ -581,7 +1053,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "adxl345",
@@ -599,7 +1089,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "rpx-embir",
@@ -617,7 +1125,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-09-29",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Generic earlier candidate superseded for sourcing comparison by two exact Q4718 development configurations; do not transfer their mass/lead to this different MPN.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "powerfilm-sp3",
@@ -632,7 +1158,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "genasun-gv5",
@@ -649,7 +1193,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "taoglas-tg09",
@@ -664,7 +1226,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "rockblock9603",
@@ -679,7 +1259,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "teensy41",
@@ -695,7 +1293,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "nucleo-l432kc",
@@ -711,7 +1327,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "omron-d2f",
@@ -730,7 +1364,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "drv5032",
@@ -748,7 +1400,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "pi-zero2",
@@ -766,7 +1436,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "mn3110-700",
@@ -786,7 +1474,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "aeronaut723939",
@@ -806,7 +1512,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "boson640",
@@ -825,7 +1549,28 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "lifecycle": "Discontinued",
+    "lifecycle_source_url": "https://www.oem.flir.com/products/boson/?model=20640A006",
+    "lifecycle_checked_on": "2026-10-29",
+    "procurement": {
+      "evidence_date": "2026-10-29",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Manufacturer lifecycle page reviewed in this thread",
+      "status": "Discontinued; excluded from new procurement",
+      "notes": "Do not apply broad Boson/Boson+ backorder estimates to a discontinued exact MPN.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "microhard2450",
@@ -850,7 +1595,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "bg95m3",
@@ -866,7 +1629,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "iridium9603",
@@ -888,7 +1669,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "kyocera-lds",
@@ -904,7 +1703,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "maxeon-cells",
@@ -920,7 +1737,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "lt8490",
@@ -938,7 +1773,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "lt8491",
@@ -956,7 +1809,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "pololu-6v",
@@ -976,7 +1847,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "ark-mosaic",
@@ -992,7 +1881,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "sf11c",
@@ -1008,7 +1915,25 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   },
   {
     "id": "saft-mp-pack",
@@ -1024,6 +1949,797 @@
     "ndaa": null,
     "blue": null,
     "ndaa_source_url": null,
-    "blue_source_url": null
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "No supplier-specific lead-time evidence imported",
+      "status": "Unknown",
+      "notes": "No lead time established in this partner pull; do not treat missing data as immediate availability.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "vertiq4006-770-default",
+    "name": "Vertiq 40-06 G2 770Kv Default kit",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://www.vertiq.co/40-06-g2",
+    "attributes": {
+      "voltage_max_v": 25.2,
+      "tested_prop_in": 10.0,
+      "tested_voltage_v": 24.0,
+      "thrust_kgf": 1.92
+    },
+    "checked_on": "2026-10-29",
+    "notes": "Integrated motor/ESC. Thrust point uses fixed 10x5R at near-24 V; no folding-prop or discharged-pack qualification. Base module is 91.3 g before kit; complete kit mass unknown. Performance point requires blower. Blue listing forecast from October 1 is not current listing evidence. Separate ESC BOM allocation must be reconciled if using integrated module.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-01",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        2,
+        3
+      ],
+      "quantity_basis": [
+        4,
+        10
+      ],
+      "price_usd": {
+        "per_module": 310,
+        "type": "July 2026 price guide; no validity date"
+      },
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Guide received October 1; 4\u201310 initial units. Not a configuration-specific quote; freight, tax and accessories unconfirmed.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "vertiq4006-770-performance",
+    "name": "Vertiq 40-06 G2 770Kv Performance kit",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://www.vertiq.co/40-06-g2",
+    "attributes": {
+      "voltage_max_v": 25.2,
+      "tested_prop_in": 10.0,
+      "tested_voltage_v": 24.0,
+      "thrust_kgf": 1.95
+    },
+    "checked_on": "2026-10-29",
+    "notes": "Integrated motor/ESC. Thrust point uses fixed 10x5R at near-24 V; no folding-prop or discharged-pack qualification. Base module is 91.3 g before kit; complete kit mass unknown. Performance point requires blower. Blue listing forecast from October 1 is not current listing evidence. Separate ESC BOM allocation must be reconciled if using integrated module.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-01",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        2,
+        3
+      ],
+      "quantity_basis": [
+        4,
+        10
+      ],
+      "price_usd": {
+        "per_module": 325,
+        "type": "July 2026 price guide; no validity date"
+      },
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Guide received October 1; 4\u201310 initial units. Not a configuration-specific quote; freight, tax and accessories unconfirmed.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "rpx-embir3-65",
+    "name": "RPX EmbIR-3 65 degree USB-C development camera",
+    "categories": [
+      "thermal"
+    ],
+    "source_url": "https://www.rpxtech.com/thermal-cores.html",
+    "attributes": {
+      "mass_g": 47.0,
+      "pixels_x": 640,
+      "pixels_y": 480,
+      "fps": 30.0,
+      "interface": "USB",
+      "voltage_min_v": 3.8,
+      "voltage_max_v": 5.5,
+      "active_w": 1.0
+    },
+    "checked_on": "2026-10-29",
+    "notes": "Exact quoted MPN U-PL-EMBIR-CU-640-60-11-0W-6U1. Mass includes USB-C backplate, not full aircraft installation. 1 W is conservative upper bound of supplier <1 W report. 65-degree lens recommended October 1; not selected. Supplier letter MG2605411A dated May 5 claims NDAA/Framework; exact current government entry and mapping not independently verified.",
+    "qualification": "Partial assembly candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-09-29",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        1,
+        3
+      ],
+      "quantity_basis": [
+        1,
+        10
+      ],
+      "price_usd": {
+        "per_unit": 2334.98,
+        "quote_id": "Q4718",
+        "quote_date": "2026-09-25",
+        "valid_days": 30,
+        "type": "Historical development-unit quote"
+      },
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Historical price window elapsed; lead needs reconfirmation",
+      "notes": "Lead is from September 29 supplier email, not quote text. Quote was quantity one of each lens; NCNR and prepayment below $30k. Installation hardware/cables/conversion extra.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "manufacturer_part_number": "U-PL-EMBIR-CU-640-60-11-0W-6U1",
+    "compliance_claims": [
+      {
+        "type": "Supplier letter reported in partner tracker",
+        "document": "MG2605411A",
+        "date": "2026-05-05",
+        "claim": "EmbIR-3 NDAA and Blue UAS Framework",
+        "verified_for_exact_configuration": false
+      }
+    ]
+  },
+  {
+    "id": "rpx-embir3-93.7",
+    "name": "RPX EmbIR-3 93.7 degree USB-C development camera",
+    "categories": [
+      "thermal"
+    ],
+    "source_url": "https://www.rpxtech.com/thermal-cores.html",
+    "attributes": {
+      "mass_g": 72.0,
+      "pixels_x": 640,
+      "pixels_y": 480,
+      "fps": 30.0,
+      "interface": "USB",
+      "voltage_min_v": 3.8,
+      "voltage_max_v": 5.5,
+      "active_w": 1.0
+    },
+    "checked_on": "2026-10-29",
+    "notes": "Exact quoted MPN U-PL-EMBIR-CU-640-60-8-0W-6U1. Mass includes USB-C backplate, not full aircraft installation. 1 W is conservative upper bound of supplier <1 W report. 65-degree lens recommended October 1; not selected. Supplier letter MG2605411A dated May 5 claims NDAA/Framework; exact current government entry and mapping not independently verified.",
+    "qualification": "Partial assembly candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-09-29",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        1,
+        3
+      ],
+      "quantity_basis": [
+        1,
+        10
+      ],
+      "price_usd": {
+        "per_unit": 2563.98,
+        "quote_id": "Q4718",
+        "quote_date": "2026-09-25",
+        "valid_days": 30,
+        "type": "Historical development-unit quote"
+      },
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Historical price window elapsed; lead needs reconfirmation",
+      "notes": "Lead is from September 29 supplier email, not quote text. Quote was quantity one of each lens; NCNR and prepayment below $30k. Installation hardware/cables/conversion extra.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "manufacturer_part_number": "U-PL-EMBIR-CU-640-60-8-0W-6U1",
+    "compliance_claims": [
+      {
+        "type": "Supplier letter reported in partner tracker",
+        "document": "MG2605411A",
+        "date": "2026-05-05",
+        "claim": "EmbIR-3 NDAA and Blue UAS Framework",
+        "verified_for_exact_configuration": false
+      }
+    ]
+  },
+  {
+    "id": "anvil-f1051-2",
+    "name": "Anvil ANV-F1051-2 folding propeller assembly",
+    "categories": [
+      "propeller"
+    ],
+    "source_url": "https://anvilpropulsion.com/propellers/anv-f1051-2",
+    "attributes": {
+      "diameter_in": 10.0,
+      "pitch_in": 5.1,
+      "folding": true
+    },
+    "checked_on": "2026-10-29",
+    "notes": "CW/CCW assembly candidate. October 5 reply described development/release forecast; release is not assumed to have happened. Complete assembly mass, hub RPM and matched thrust need written evidence. October 9 price/ARO terms available only as retrieved prior chat summary; not a refreshed quote.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-05",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        12,
+        14
+      ],
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Shipping estimate followed projected release in 1\u20132 weeks. Whether lead starts at release, order acceptance or payment needs reconfirmation. Do not calculate an arrival date.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "reported_history": [
+      {
+        "date": "2026-10-09",
+        "basis": "Retrieved prior assistant summary; original quote not recovered",
+        "unverified": true,
+        "quantity": 16,
+        "rotation_split": "8 CW / 8 CCW",
+        "total_usd": 640,
+        "spare_blade_usd": 10,
+        "spare_hub_usd": 12,
+        "reported_lead_weeks": [
+          12,
+          14
+        ],
+        "reported_basis": "ARO",
+        "release_forecast": "2026-10-21",
+        "current_release_confirmed": false
+      }
+    ]
+  },
+  {
+    "id": "epropelled3115",
+    "name": "ePropelled Sparrow APM 3115-Kv900",
+    "categories": [
+      "motor"
+    ],
+    "source_url": "https://epropelled.com/products/sparrow-series-apm-3115-kv900-brushless-motor",
+    "attributes": {
+      "mass_g": 113.0,
+      "voltage_max_v": 25.2
+    },
+    "checked_on": "2026-10-29",
+    "notes": "Motor-only unless exact quote states ESC inclusion. Partner record uses January 2026 fixed 10x7 tri-blade data, not folding props. Historical 15,000 RPM limit conflicts with current public 22,000 RPM maximum; no qualified RPM rating entered pending revision-specific reconciliation. Peak thrust/power are not continuous ratings.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": [
+        1,
+        2
+      ],
+      "quantity_basis": [
+        1,
+        40
+      ],
+      "price_usd": {
+        "per_unit": 99,
+        "type": "Historical vendor report; no current validity"
+      },
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Partner tracker records about 1\u20132 weeks up to 40 units but precise source date unresolved.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "reported_history": [
+      {
+        "date": "2026-10-17",
+        "basis": "Retrieved prior assistant summary; original quote not recovered",
+        "unverified": true,
+        "quantity": 4,
+        "total_usd": 415.8,
+        "includes_card_fee_usd": 19.8,
+        "lead_confirmed": false
+      }
+    ]
+  },
+  {
+    "id": "pegasus135",
+    "name": "Pegasus PA-R-135-4 via Northwest UAV",
+    "categories": [
+      "actuator"
+    ],
+    "source_url": "https://www.nwuav.com/",
+    "attributes": {
+      "mass_g": 65.0,
+      "torque_kgcm": 3.0591486389337845
+    },
+    "checked_on": "2026-10-29",
+    "notes": "65 g actuator; continuous 30 Ncm converted to kgf cm. Choose exact 6/12/24 V variant; do not assume a continuous input range. Published IP67 is actuator-level. Torque, latch geometry, current and origin need exact-build evidence.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Current quote not recovered. October 20 historical summary below is not a supplier-confirmed current delivery commitment.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "reported_history": [
+      {
+        "date": "2026-10-20",
+        "basis": "Retrieved prior assistant summary; original quote not recovered",
+        "unverified": true,
+        "quantity_offers": [
+          {
+            "qty": 2,
+            "total_usd": 3957,
+            "lead_weeks": [
+              8,
+              8
+            ]
+          },
+          {
+            "qty": 4,
+            "total_usd": 7613,
+            "lead_weeks": [
+              8,
+              8
+            ]
+          },
+          {
+            "qty": 10,
+            "total_usd": 18582,
+            "lead_weeks": [
+              9,
+              10
+            ]
+          }
+        ],
+        "reported_unit_usd": 1662,
+        "reported_terms": "50% prepay / Net15; quote expiry November 20; freight/configuration unconfirmed"
+      }
+    ]
+  },
+  {
+    "id": "packet-mppt6",
+    "name": "Packet Digital MPPT-6SBB",
+    "categories": [
+      "charger"
+    ],
+    "source_url": "https://packetdigital.com/power-products/maximum-power-point-tracker/",
+    "attributes": {
+      "mass_g": 30.0,
+      "mppt": true,
+      "output_voltage_max_v": 29.0
+    },
+    "checked_on": "2026-10-29",
+    "notes": "8\u201330 V input, 11\u201329 V output, 8 A ceiling, 30 g with connectors, DroneCAN, as recorded in partner tracker. 29 V output ceiling is below the app default 29.4 V maximum bus requirement. Firmware/setpoint discrepancy, standby draw, BMS recovery and thermal derating remain open.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-07",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Price, lead and exact revision not established.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "critical-am62a",
+    "name": "Critical Link MitySOM-AM62A family",
+    "categories": [
+      "compute"
+    ],
+    "source_url": "https://www.criticallink.com/product/edge-ai-camera-with-mitysom-am62a/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "Partner compute candidate. SOM needs exact SKU, carrier, cameras, power conversion and complete installed mass/power. Edge AI Camera demo availability does not establish stock or delivery of a flight-ready assembly.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "No dated supplier delivery or price found in retrieved partner material.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "embention1x",
+    "name": "Embention Veronte 1x 4.12 configuration pending",
+    "categories": [
+      "flight_controller"
+    ],
+    "source_url": "https://www.embention.com/veronte/autopilots/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "October 28 partner meeting notes: 5.6 W Remote ID variant, 6.5 W ADS-B variant; do not treat as interchangeable. Exact SKU and complete installed mass not frozen. Standards-development claims do not establish NDAA/Blue approval or plug-in compatibility with PX4/ArduPilot.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-28",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": {
+        "rom_per_unit": 9000,
+        "type": "User meeting notes; not formal quote"
+      },
+      "basis": "User meeting notes visible in shared conversation context",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time, quotation validity, currency and included hardware/licenses require written confirmation.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "reported_attributes": {
+      "remote_id_variant_w": 5.6,
+      "adsb_variant_w": 6.5
+    }
+  },
+  {
+    "id": "embention-kai",
+    "name": "Embention KAI configuration pending",
+    "categories": [
+      "flight_controller"
+    ],
+    "source_url": "https://www.embention.com/veronte/autopilots/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "Meeting notes use Ki/Kai; mapping to exact KAI configuration not verified. Unnamed smaller $200\u2013500 product, 30 g/40x40 mm and integrated ESC notes are not assigned to this SKU.",
+    "qualification": "COTS candidate",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-28",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": {
+        "rom_range": [
+          600,
+          2400
+        ],
+        "type": "User meeting notes; exact currency/configuration not verified"
+      },
+      "basis": "User meeting notes visible in shared conversation context",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Reported minimum order five; current written MOQ, exact SKU, price, lead and compliance packet required.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    },
+    "reported_moq": 5
+  },
+  {
+    "id": "bren-custom",
+    "name": "Bren-Tronics custom Pigeon battery candidate",
+    "categories": [
+      "battery"
+    ],
+    "source_url": "https://www.bren-tronics.com/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "No exact 6S pack, cell/BMS provenance, delivered energy/mass/current or quote selected.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "powerfilm-custom",
+    "name": "PowerFilm custom circular array candidate",
+    "categories": [
+      "solar"
+    ],
+    "source_url": "https://www.powerfilmsolar.com/capabilities",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "Custom aircraft array; do not transfer thin-film module performance to a compact 24%-cell array.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "masterair-custom",
+    "name": "Master Airscrew custom 10x6 folding proposal",
+    "categories": [
+      "propeller"
+    ],
+    "source_url": "https://www.masterairscrew.com/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "Preliminary 10x6 two-blade proposal, 10x5.5 alternate; no qualified hub/RPM/thrust or production schedule.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": null,
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "locus-s",
+    "name": "Locus Lock LEO100-S successor candidate",
+    "categories": [
+      "gnss"
+    ],
+    "source_url": "https://www.locuslock.com/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "October 2 call: single-antenna successor; exact mass/power and current listing unverified.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-02",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "locus-d",
+    "name": "Locus Lock LEO100-D successor candidate",
+    "categories": [
+      "gnss"
+    ],
+    "source_url": "https://www.locuslock.com/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "October 2 call: dual-antenna successor; complete antenna installation and listing unverified.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-02",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
+  },
+  {
+    "id": "locus200",
+    "name": "Locus Lock LEO200 candidate",
+    "categories": [
+      "gnss"
+    ],
+    "source_url": "https://www.locuslock.com/",
+    "attributes": {},
+    "checked_on": "2026-10-29",
+    "notes": "October 2 call: lighter/lower power than original LEO100; no numerical ratings or current listing established.",
+    "qualification": "Family sourcing lead",
+    "ndaa": null,
+    "blue": null,
+    "ndaa_source_url": null,
+    "blue_source_url": null,
+    "procurement": {
+      "evidence_date": "2026-10-02",
+      "reviewed_on": "2026-10-29",
+      "lead_time_weeks": null,
+      "quantity_basis": null,
+      "price_usd": null,
+      "basis": "Partner tracker; original supplier quote not independently revalidated",
+      "status": "Reported; reconfirm with supplier",
+      "notes": "Lead time and exact configuration quote unknown.",
+      "source": {
+        "type": "partner_tracker",
+        "name": "Pigeon_Bot_Partner_Outreach_Tracker.md",
+        "library_file_id": "libfile_f09a3357fc7481918b8e0ee92103fe4c",
+        "version": "54",
+        "reviewed_on": "2026-10-29"
+      },
+      "current_supplier_confirmation": false
+    }
   }
 ]
