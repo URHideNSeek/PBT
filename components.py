@@ -266,6 +266,7 @@ def bom(result,sizing,plan,settings):
 
 def evaluate_product(row,product,strict=False):
  reasons=[]
+ if product.get('lifecycle')=='Discontinued':reasons.append('Lifecycle mismatch: discontinued exact product')
  if row['open_requirements']:reasons+=['Open requirement: '+x for x in row['open_requirements']]
  if strict:
   for gate in ['ndaa','blue']:
@@ -294,7 +295,7 @@ def match(rows,catalog,strict=False):
    if row['category'] not in product.get('categories',[product.get('category')]) or product['id'] in seen:continue
    seen.add(product['id'])
    reasons=evaluate_product(row,product,strict)
-   failures=[r for r in reasons if ' does not meet ' in r or r.startswith('Policy mismatch:')]
+   failures=[r for r in reasons if ' does not meet ' in r or r.startswith(('Policy mismatch:','Lifecycle mismatch:'))]
    entry={'product':product,'reasons':reasons,'failures':failures}
    if failures:rejected.append(entry)
    elif reasons:pending.append(entry)
@@ -306,3 +307,20 @@ def match(rows,catalog,strict=False):
           'No documented fit — known mismatches' if rejected else 'Not researched yet')
   output.append({'row':row,'options':good[:3],'candidates':pending,'rejected':rejected,'status':status})
  return output
+
+
+def procurement_rows(catalog):
+ """Dated sourcing register; unknown lead is never represented as zero weeks."""
+ rows=[]
+ for product in catalog:
+  p=product.get('procurement',{});lead=p.get('lead_time_weeks')
+  lead_text=(f'{lead[0]}–{lead[1]} weeks (reported)' if lead else 'Unknown / quote required')
+  history=product.get('reported_history',[])
+  rows.append({'Component':product['name'],'Categories':', '.join(product.get('categories',[])),
+   'Lead time':lead_text,'Evidence date':p.get('evidence_date') or 'Not established',
+   'Quantity basis':str(p.get('quantity_basis') or 'Not established'),
+   'Price / ROM':__import__('json').dumps(p.get('price_usd'),ensure_ascii=False) if p.get('price_usd') else 'Not established',
+   'Status':p.get('status','Unknown'),'Evidence basis':p.get('basis','Not established'),
+   'Unverified history':__import__('json').dumps(history,ensure_ascii=False) if history else '',
+   'Notes':p.get('notes',''),'Manufacturer source':product.get('source_url','')})
+ return rows
