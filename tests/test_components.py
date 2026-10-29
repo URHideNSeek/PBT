@@ -182,3 +182,30 @@ class PhaseCommunicationsTests(unittest.TestCase):
   a.run(timeout=30);self.assertFalse(a.exception)
   after=a.session_state['envelope_result']['settings']['nonbattery_kg']
   self.assertAlmostEqual(before-after,.4872)
+
+class PartnerProcurementTests(unittest.TestCase):
+ def test_unknown_lead_never_becomes_zero_or_in_stock(self):
+  from components import procurement_rows
+  row=procurement_rows([dict(id='x',name='Unknown',categories=['battery'],attributes={})])[0]
+  self.assertEqual(row['Lead time'],'Unknown / quote required')
+  self.assertEqual(row['Evidence date'],'Not established')
+ def test_reported_lead_retains_date_quantity_and_basis(self):
+  from components import procurement_rows
+  catalog=json.loads((ROOT/'catalog.json').read_text())
+  p=next(x for x in catalog if x['id']=='rpx-embir3-65')
+  row=procurement_rows([p])[0]
+  self.assertEqual(row['Lead time'],'1–3 weeks (reported)')
+  self.assertEqual(row['Evidence date'],'2026-09-29')
+  self.assertEqual(p['manufacturer_part_number'],'U-PL-EMBIR-CU-640-60-11-0W-6U1')
+  self.assertFalse(p['procurement']['current_supplier_confirmation'])
+  self.assertEqual(p['procurement']['price_usd']['quote_id'],'Q4718')
+ def test_discontinued_product_is_excluded_not_pending(self):
+  row=dict(category='thermal',sourcing=True,open_requirements=[],requirements={})
+  p=dict(id='x',name='X',categories=['thermal'],source_url='https://example.org',checked_on='2026-10-29',attributes={},lifecycle='Discontinued')
+  screened=match([row],[p])[0]
+  self.assertFalse(screened['options']);self.assertFalse(screened['candidates']);self.assertEqual(len(screened['rejected']),1)
+ def test_unrecovered_quote_not_promoted_to_active_lead(self):
+  c=json.loads((ROOT/'catalog.json').read_text());p=next(x for x in c if x['id']=='pegasus135')
+  self.assertIsNone(p['procurement']['lead_time_weeks'])
+  self.assertTrue(p['reported_history'][0]['unverified'])
+  self.assertTrue(all('procurement' in x for x in c))
